@@ -11,7 +11,6 @@ agent-service-toolkit, where ``user_id`` was accepted from the request payload.)
 
 from __future__ import annotations
 
-import hashlib
 import re
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -31,11 +30,6 @@ SCOPE_READ_CONVERSATIONS = "conversations:read"
 class Identity:
     subject: str
     scopes: frozenset[str] = field(default_factory=frozenset)
-
-    @property
-    def subject_hash(self) -> str:
-        """Stable, non-reversible identifier for logs and evidence."""
-        return hashlib.sha256(self.subject.encode()).hexdigest()[:16]
 
     def require_scope(self, scope: str) -> None:
         if scope not in self.scopes:

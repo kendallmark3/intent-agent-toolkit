@@ -30,7 +30,10 @@ class ExecutionRecord(BaseModel):
     request_id: str | None
     execution_id: str
     agent: str
-    subject_hash: str = Field(description="Non-reversible hash of the caller identity.")
+    subject_hash: str = Field(
+        description="Keyed pseudonym of the caller (HMAC-SHA256, 128 bits). Correlates one "
+        "caller's runs; cannot be recomputed from a user name without the server key."
+    )
     tools_invoked: list[ToolInvocationRecord] = Field(default_factory=list)
     status: ExecutionStatus
     duration_ms: float

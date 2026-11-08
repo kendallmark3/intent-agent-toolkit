@@ -1,0 +1,3 @@
+A baseline: agent-supplied allowlist -> OK
+B baseline: sha256('alice')[:16] == logged -> True
+C baseline: stored conversations after 20000 creates -> 20000

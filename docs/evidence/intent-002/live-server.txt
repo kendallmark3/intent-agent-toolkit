@@ -1,0 +1,12 @@
+== live server checks 2026-11-08T13:28:50Z
+ready: 200
+unauth invoke: 401
+list agents, conversations:read only: 403
+list agents, agents:invoke: 200
+acme: READY subject_hash_len= 32
+message 201 chars (limit 200): {"error":{"code":"VALIDATION_ERROR","message":"Message exceeds 200 characters","request_id":"77709f6759c14686a8b10ddcaece0fb5"}} [422]
+window=2 after 2 exchanges: turns 2 dropped 2
+bob reads alice conversation: 404
+sha256(alice)[:16] in server log: 0
+raw 'alice' in server log: 0
+token in server log: 0

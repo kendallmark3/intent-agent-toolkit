@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel, ValidationError
 
 from iat.agents.registry import AgentRegistry
-from iat.core.errors import AgentExecutionError, NotFoundError
+from iat.core.errors import AgentExecutionError, InputValidationError, NotFoundError
 from iat.schemas.execution import ExecutionRecord, ExecutionStatus
 from iat.security.identity import Identity
 from iat.services.conversations import ConversationRepository, turn
@@ -41,7 +41,9 @@ class AgentRunner:
         tools: ToolExecutor,
         conversations: ConversationRepository,
         clock: Callable[[], dt.date],
+        pseudonymize: Callable[[str], str],
     ) -> None:
+        self._pseudonymize = pseudonymize
         self._agents = agents
         self._tools = tools
         self._conversations = conversations
@@ -56,6 +58,9 @@ class AgentRunner:
         request_id: str | None,
         conversation_id: str | None = None,
     ) -> RunOutcome:
+        limit = self._conversations.limits.max_message_chars
+        if len(message) > limit:
+            raise InputValidationError(f"Message exceeds {limit} characters")
         agent = self._agents.get(agent_key)
         if agent is None:
             raise NotFoundError(f"Unknown agent: {agent_key}")
@@ -71,7 +76,7 @@ class AgentRunner:
                 request_id=request_id,
                 execution_id=execution_id,
                 agent=agent.key,
-                subject_hash=identity.subject_hash,
+                subject_hash=self._pseudonymize(identity.subject),
                 tools_invoked=list(recorder.records),
                 status=status,
                 duration_ms=round((time.perf_counter() - started) * 1000, 3),
@@ -86,8 +91,9 @@ class AgentRunner:
                 {"message": message},
                 config={
                     "configurable": {
-                        "tool_executor": self._tools,
-                        "recorder": recorder,
+                        # The agent gets a gateway bound to the agent resolved from the registry;
+                        # it never sees the executor, the policy or the recorder directly.
+                        "tools": self._tools.bind(agent.key, recorder),
                         "execution_id": execution_id,
                         "as_of": self._clock(),
                     }

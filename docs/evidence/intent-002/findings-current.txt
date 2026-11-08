@@ -1,0 +1,4 @@
+A current: registered agent calls delete_supplier -> DENIED
+A current: passing allowed_tools -> TypeError (no such parameter)
+B current: sha256('alice')[:16] == logged -> False
+C current: stored conversations after 20000 creates -> 50 | evictions {'owner_capacity': 19950}

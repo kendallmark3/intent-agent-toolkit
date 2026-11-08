@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -74,3 +75,24 @@ def test_docs_can_be_disabled() -> None:
     with TestClient(create_app(settings)) as client:
         assert client.get("/openapi.json").status_code == 404
         assert client.get("/docs").status_code == 404
+
+
+def test_documented_env_example_setup_starts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """README path: copy .env.example, set only IAT_JWT_SECRET, start (INTENT-002 regression)."""
+    root = Path(__file__).resolve().parent.parent
+    example = (root / ".env.example").read_text()
+    assert "\nIAT_JWT_SECRET=\n" in example
+    (tmp_path / ".env").write_text(
+        example.replace("\nIAT_JWT_SECRET=\n", f"\nIAT_JWT_SECRET={TEST_SECRET}\n")
+    )
+    for key in list(os.environ):
+        if key.startswith("IAT_"):
+            monkeypatch.delenv(key)
+    monkeypatch.chdir(tmp_path)
+    settings = Settings()  # type: ignore[call-arg]
+    assert settings.assessment_date is None
+    assert settings.subject_pseudonym_key is None
+    with TestClient(create_app(settings)) as client:
+        assert client.get("/health/ready").status_code == 200

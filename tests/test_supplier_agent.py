@@ -8,18 +8,16 @@ from collections.abc import Callable
 import pytest
 from fastapi.testclient import TestClient
 
-from iat.agents.registry import AgentRegistry, default_agents
 from iat.agents.supplier_readiness.graph import extract_supplier_reference
 from iat.agents.supplier_readiness.rules import REQUIRED_CHECKS, evaluate_evidence
+from iat.core.config import DEFAULT_DATA_PATH
 from iat.schemas.api import InvokeResponse
 from iat.schemas.assessment import CheckOutcome, Decision, SupplierAssessment
 from iat.security.identity import Identity
-from iat.services.conversations import InMemoryConversationRepository
-from iat.services.runner import AgentRunner
 from iat.services.supplier_repository import SupplierRecord, SupplierRepository
-from iat.tools.registry import ToolExecutor, ToolRegistry
+from iat.tools.registry import ToolRegistry
 from iat.tools.supplier_evidence import SupplierEvidenceLookupTool
-from tests.conftest import AS_OF, INVOKE
+from tests.conftest import AS_OF, INVOKE, build_runner
 
 Auth = Callable[[str], dict[str, str]]
 ALL_CHECKS = {c.key for c in REQUIRED_CHECKS}
@@ -104,13 +102,7 @@ def test_ambiguous_supplier_is_not_guessed() -> None:
             SupplierRecord(supplier_id="SUP-102", name="Delta Plastics", evidence={}),
         ]
     )
-    registry = ToolRegistry([SupplierEvidenceLookupTool(repo)])
-    runner = AgentRunner(
-        AgentRegistry(default_agents()),
-        ToolExecutor(registry),
-        InMemoryConversationRepository(),
-        lambda: AS_OF,
-    )
+    runner = build_runner(ToolRegistry([SupplierEvidenceLookupTool(repo)]))
     outcome = runner.run(
         agent_key="supplier-readiness",
         message="Can Supplier Delta be approved?",
@@ -124,15 +116,8 @@ def test_ambiguous_supplier_is_not_guessed() -> None:
 
 def test_runner_is_transport_independent() -> None:
     """The agent runs without FastAPI — the seam a future AgentCore entrypoint will use."""
-    repo = SupplierRepository.from_json(
-        __import__("iat.core.config", fromlist=["DEFAULT_DATA_PATH"]).DEFAULT_DATA_PATH
-    )
-    runner = AgentRunner(
-        AgentRegistry(default_agents()),
-        ToolExecutor(ToolRegistry([SupplierEvidenceLookupTool(repo)])),
-        InMemoryConversationRepository(),
-        lambda: AS_OF,
-    )
+    repo = SupplierRepository.from_json(DEFAULT_DATA_PATH)
+    runner = build_runner(ToolRegistry([SupplierEvidenceLookupTool(repo)]))
     outcome = runner.run(
         agent_key="supplier-readiness",
         message="Can Supplier Acme be approved?",
