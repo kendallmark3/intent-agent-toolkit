@@ -2,7 +2,7 @@
 
 LangGraph is IAT's **orchestration framework**. Amazon Bedrock AgentCore is a **managed runtime
 and infrastructure platform** for agents. They are complementary: AgentCore would host and
-govern IAT agents; it would not replace the graph. Nothing in v0.1 depends on AWS.
+govern IAT agents; it would not replace the graph. Nothing in the toolkit (v0.3) depends on AWS.
 
 ## Runtime contract (as documented by AWS, checked 2026-11-08)
 
@@ -20,7 +20,7 @@ Re-verify before INTENT-004; the service is evolving.
 | Runtime | `AgentRunner.run()` has no HTTP dependency | Thin adapter: `/invocations` → `runner.run(...)`; `/ping` → readiness checks; port 8080; ARM64 build |
 | Identity (inbound) | `TokenVerifier` protocol | `OidcVerifier` against the AgentCore/IdP JWKS; map `sub` + scopes to `Identity` |
 | Gateway (governed tools) | `Tool.spec()` emits MCP-shaped JSON Schema; `ToolExecutor` enforces the registration-derived `ToolPolicy` | Remote-tool adapter implementing `Tool`; executor policy unchanged |
-| Model gateway | `Narrator` port (no model in v0.1) | Model-backed narrator/extractor nodes calling Bedrock via gateway |
+| Model gateway | `Narrator` port (no model yet) | Model-backed narrator/extractor nodes calling Bedrock via gateway |
 | Memory | `ConversationRepository` protocol | AgentCore Memory or Postgres implementation |
 | Observability | `ExecutionRecord` JSON logs, request ids | Emit as OpenTelemetry spans/attributes |
 | Session | server-generated `conversation_id` | Map AgentCore session id → conversation id under the verified owner |

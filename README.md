@@ -135,7 +135,8 @@ docs/         architecture, source decisions, security, AgentCore boundary, repo
 - [Implementation report](docs/IMPLEMENTATION_REPORT.md) — INTENT-001 evidence
 - [INTENT-001 baseline assessment](docs/assessments/INTENT-001-BASELINE.md) — RepoIntent self-assessment, preserved
 - [INTENT-002 results](docs/INTENT-002-RESULTS.md) — hardening from that assessment
-- [v0.2 assessment](docs/assessments/INTENT-002-REPOINTENT.md) — RepoIntent after INTENT-002, preserved
+- [v0.2 assessment](docs/assessments/INTENT-002-REPOINTENT.md) — RepoIntent self-assessment after INTENT-002, preserved
+- [INTENT-002 independent assessment](docs/assessments/INTENT-002-INDEPENDENT.md) — RepoIntent run from a fresh session
 - [INTENT-003 results](docs/INTENT-003-RESULTS.md) — web console, workflow evidence, container proof
 - [Adding an agent](docs/ADDING_AN_AGENT.md) — the template path for the next agents
 

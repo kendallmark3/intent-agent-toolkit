@@ -88,7 +88,7 @@ def invoke_agent(
         {
             "conversation_id": outcome.conversation_id,
             "request_id": outcome.execution.request_id,
-            "output": outcome.output.model_dump(),
+            "output": outcome.output.model_dump(mode="json"),
             "execution": outcome.execution,
         }
     )

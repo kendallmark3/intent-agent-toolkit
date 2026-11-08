@@ -288,3 +288,48 @@ def test_smoke_script_fails_with_bad_token(live_server: str) -> None:
     )
     assert result.returncode == 1
     assert "FAIL token can list agents" in result.stdout
+
+
+# --- agent-neutral HTTP contract (independent finding C-026/027) -----------------------------
+
+
+def test_second_agent_with_different_output_model_works_over_http(
+    settings: Settings, auth: Auth
+) -> None:
+    from pydantic import BaseModel
+
+    class EchoResult(BaseModel):
+        echoed: str
+        length: int
+
+    graph = StateGraph(dict)
+    graph.add_node(
+        "echo", lambda s: {"result": {"echoed": s["message"], "length": len(s["message"])}}
+    )
+    graph.set_entry_point("echo")
+    graph.add_edge("echo", END)
+    echo = AgentDefinition(
+        key="echo",
+        description="Echoes the message (contract test agent).",
+        allowed_tools=frozenset(),
+        graph=graph.compile(),
+        output_key="result",
+        output_model=EchoResult,
+        examples=("hello",),
+        regression_cases=(RegressionCase(name="echo", message="hello", expect={"length": 5}),),
+    )
+    with TestClient(create_app(settings, agents=[*default_agents(), echo])) as client:
+        body = client.post("/v1/agents/echo/invoke", json={"message": "hello"}, headers=auth("a"))
+        report = client.post("/v1/agents/echo/regression", headers=auth("a")).json()
+        listed = {a["key"] for a in client.get("/v1/agents", headers=auth("a")).json()}
+    assert body.status_code == 200, body.text
+    assert body.json()["output"] == {"echoed": "hello", "length": 5}
+    assert [s["node"] for s in body.json()["execution"]["steps"]] == ["echo"]
+    assert report["passed"] == 1
+    assert listed == {"echo", "supplier-readiness"}
+
+
+def test_container_image_disables_api_docs_by_default() -> None:
+    dockerfile = (ROOT / "Dockerfile").read_text()
+    assert "IAT_DOCS_ENABLED=false" in dockerfile
+    assert "USER iat" in dockerfile and "HEALTHCHECK" in dockerfile

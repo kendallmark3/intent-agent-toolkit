@@ -8,7 +8,6 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from iat.core.config import MESSAGE_HARD_CEILING
-from iat.schemas.assessment import SupplierAssessment
 from iat.schemas.execution import ExecutionRecord
 
 
@@ -30,9 +29,15 @@ class InvokeRequest(BaseModel):
 
 
 class InvokeResponse(BaseModel):
+    """Agent-neutral envelope. ``output`` is the invoked agent's own output model, already
+    validated by the runner against ``AgentDefinition.output_model`` (independent finding C-026)."""
+
     conversation_id: str
     request_id: str | None
-    output: SupplierAssessment
+    output: dict[str, Any] = Field(
+        description="The agent's structured output; its schema depends on the agent "
+        "(supplier-readiness returns a SupplierAssessment)."
+    )
     execution: ExecutionRecord
 
 

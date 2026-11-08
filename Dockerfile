@@ -13,7 +13,8 @@ FROM python:3.12-slim
 RUN useradd --create-home --uid 10001 iat
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH" IAT_HOST=0.0.0.0 IAT_PORT=8000 PYTHONDONTWRITEBYTECODE=1
+# API docs are off by default in the image (independent finding C-033); set IAT_DOCS_ENABLED=true to opt in.
+ENV PATH="/app/.venv/bin:$PATH" IAT_HOST=0.0.0.0 IAT_PORT=8000 IAT_DOCS_ENABLED=false PYTHONDONTWRITEBYTECODE=1
 USER iat
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \

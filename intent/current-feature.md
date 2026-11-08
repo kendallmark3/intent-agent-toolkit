@@ -79,3 +79,17 @@ No auth bypass or token-minting endpoint; console renders output as text only un
 ## Evidence
 Console exercised against a live server; regression cases pass via console/API/smoke/CI container;
 full gate passes; results in docs/INTENT-003-RESULTS.md.
+
+## Delta 2a — independent assessment input (docs/assessments/INTENT-002-INDEPENDENT.md)
+
+### Observation
+A fresh-session RepoIntent run of v0.2 (merged as PR #3 during this progression) agrees on Radius 3,
+partial 4, and adds: HTTP output typed to one agent (C-026/027); docs on by default in the image
+(C-033); base images tag-pinned (C-034); doc drift (C-029, C-038).
+
+### Change
+Agent-neutral invoke response proven with a second minimal agent over HTTP; docs off by default in
+the container; Dependabot for Docker, Actions and uv; drift corrected.
+
+### New Boundary
+Digest pinning of base images is deferred (registry not reachable from the build environment).
