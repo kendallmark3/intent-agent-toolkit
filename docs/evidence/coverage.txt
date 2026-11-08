@@ -1,0 +1,40 @@
+........................................................................ [ 96%]
+...                                                                      [100%]
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.18-final-0 _______________
+
+Name                                            Stmts   Miss  Cover
+-------------------------------------------------------------------
+src/iat/__init__.py                                 1      0   100%
+src/iat/agents/__init__.py                          0      0   100%
+src/iat/agents/registry.py                         28      0   100%
+src/iat/agents/supplier_readiness/__init__.py       0      0   100%
+src/iat/agents/supplier_readiness/graph.py         77      0   100%
+src/iat/agents/supplier_readiness/narrator.py      15      0   100%
+src/iat/agents/supplier_readiness/rules.py         55      1    98%
+src/iat/api/__init__.py                             0      0   100%
+src/iat/api/app.py                                 72      2    97%
+src/iat/api/dependencies.py                        32      0   100%
+src/iat/api/routes.py                              35      0   100%
+src/iat/core/__init__.py                            0      0   100%
+src/iat/core/config.py                             36      1    97%
+src/iat/core/errors.py                             28      0   100%
+src/iat/core/logging.py                            52      1    98%
+src/iat/main.py                                     7      7     0%
+src/iat/schemas/__init__.py                         0      0   100%
+src/iat/schemas/api.py                             46      0   100%
+src/iat/schemas/assessment.py                      30      0   100%
+src/iat/schemas/execution.py                       25      0   100%
+src/iat/security/__init__.py                        0      0   100%
+src/iat/security/dev_tokens.py                     22      8    64%
+src/iat/security/identity.py                       39      0   100%
+src/iat/services/__init__.py                        0      0   100%
+src/iat/services/conversations.py                  51      2    96%
+src/iat/services/runner.py                         53      0   100%
+src/iat/services/supplier_repository.py            26      0   100%
+src/iat/tools/__init__.py                           0      0   100%
+src/iat/tools/base.py                              29      1    97%
+src/iat/tools/registry.py                          61      0   100%
+src/iat/tools/supplier_evidence.py                 30      0   100%
+-------------------------------------------------------------------
+TOTAL                                             850     23    97%

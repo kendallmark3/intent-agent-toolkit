@@ -1,0 +1,9 @@
+{
+  "as_of": "2026-11-08",
+  "cases": [
+    {"question": "Can Supplier Acme be approved for onboarding?", "supplier_id": "SUP-001", "decision": "READY", "missing_evidence": []},
+    {"question": "Is supplier Cobalt Ridge ready to onboard?", "supplier_id": "SUP-002", "decision": "NOT_READY", "missing_evidence": []},
+    {"question": "Can Supplier Lumen be approved?", "supplier_id": "SUP-003", "decision": "INSUFFICIENT_EVIDENCE", "missing_evidence": ["bank_account_verification", "code_of_conduct", "insurance_certificate"]},
+    {"question": "Can Supplier Zenith be approved?", "supplier_id": null, "decision": "INSUFFICIENT_EVIDENCE", "missing_evidence": ["supplier_record"]}
+  ]
+}

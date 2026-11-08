@@ -1,0 +1,38 @@
+{
+  "_notice": "SYNTHETIC DATA. All suppliers, identifiers and records are fictional and exist only to demonstrate the Intent Agent Toolkit.",
+  "suppliers": [
+    {
+      "supplier_id": "SUP-001",
+      "name": "Acme Industrial Supply",
+      "aliases": ["Acme"],
+      "evidence": {
+        "tax_registration": {"status": "verified", "source": "Synthetic W-9 record TX-1001", "recorded_on": "2026-01-15"},
+        "sanctions_screening": {"status": "clear", "source": "Synthetic screening run SCR-5521", "recorded_on": "2026-02-02"},
+        "insurance_certificate": {"status": "on_file", "expires_on": "2030-06-30", "source": "Synthetic COI INS-77", "recorded_on": "2026-01-20"},
+        "bank_account_verification": {"status": "verified", "source": "Synthetic bank letter BNK-310", "recorded_on": "2026-01-22"},
+        "code_of_conduct": {"status": "signed", "source": "Synthetic attestation COC-12", "recorded_on": "2026-01-25"}
+      }
+    },
+    {
+      "supplier_id": "SUP-002",
+      "name": "Cobalt Ridge Components",
+      "aliases": ["Cobalt Ridge", "Cobalt"],
+      "evidence": {
+        "tax_registration": {"status": "verified", "source": "Synthetic W-9 record TX-2044", "recorded_on": "2025-11-03"},
+        "sanctions_screening": {"status": "potential_match", "source": "Synthetic screening run SCR-6012", "recorded_on": "2026-03-10"},
+        "insurance_certificate": {"status": "on_file", "expires_on": "2025-03-31", "source": "Synthetic COI INS-91", "recorded_on": "2024-04-01"},
+        "bank_account_verification": {"status": "verified", "source": "Synthetic bank letter BNK-402", "recorded_on": "2025-11-05"},
+        "code_of_conduct": {"status": "signed", "source": "Synthetic attestation COC-40", "recorded_on": "2025-11-06"}
+      }
+    },
+    {
+      "supplier_id": "SUP-003",
+      "name": "Lumen Freight Partners",
+      "aliases": ["Lumen Freight", "Lumen"],
+      "evidence": {
+        "tax_registration": {"status": "verified", "source": "Synthetic W-9 record TX-3090", "recorded_on": "2026-04-11"},
+        "sanctions_screening": {"status": "clear", "source": "Synthetic screening run SCR-7003", "recorded_on": "2026-04-12"}
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+uv run python examples/supplier_readiness/demo.py
+[PASS] Can Supplier Acme be approved for onboarding?
+       decision=READY supplier=SUP-001
+       Acme Industrial Supply satisfies all 5 required onboarding checks based on the evidence on file.
+       execution_id=3d793580bea44ebcb93687ed5533705d tools=['supplier_evidence_lookup:OK']
+[PASS] Is supplier Cobalt Ridge ready to onboard?
+       decision=NOT_READY supplier=SUP-002
+       Cobalt Ridge Components is not ready for onboarding: Sanctions screening: potential_match; Insurance certificate expired on 2025-03-31.
+       execution_id=5927ff7fd3644bf7b83c2172269a8f42 tools=['supplier_evidence_lookup:OK']
+[PASS] Can Supplier Lumen be approved?
+       decision=INSUFFICIENT_EVIDENCE supplier=SUP-003
+       Lumen Freight Partners cannot be assessed as ready because required evidence is missing: Insurance certificate: no record on file; Bank account verification: no record on file; Supplier code of conduct: no record on file. No missing evidence was assumed.
+       execution_id=cc27de9252bc46a5aa19d54ac2a95ea4 tools=['supplier_evidence_lookup:OK']
+[PASS] Can Supplier Zenith be approved?
+       decision=INSUFFICIENT_EVIDENCE supplier=None
+       The supplier cannot be assessed as ready because required evidence is missing: No supplier record found for 'Zenith'. No missing evidence was assumed.
+       execution_id=4a4c0f4e95b9416d850580f6a936b0d8 tools=['supplier_evidence_lookup:OK']
+[PASS] Unauthenticated request rejected with 401
+
+5/5 demo checks passed
