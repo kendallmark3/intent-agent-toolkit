@@ -107,6 +107,7 @@ docs/         architecture, source decisions, security, AgentCore boundary, repo
 - [Implementation report](docs/IMPLEMENTATION_REPORT.md) — INTENT-001 evidence
 - [INTENT-001 baseline assessment](docs/assessments/INTENT-001-BASELINE.md) — RepoIntent self-assessment, preserved
 - [INTENT-002 results](docs/INTENT-002-RESULTS.md) — hardening from that assessment
+- [INTENT-002 independent assessment](docs/assessments/INTENT-002-INDEPENDENT.md) — RepoIntent run from a fresh session
 
 ## Known limitations
 
