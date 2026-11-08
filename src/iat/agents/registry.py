@@ -38,6 +38,10 @@ class AgentRegistry:
     def __init__(self, agents: list[AgentDefinition]) -> None:
         self._agents = {a.key: a for a in agents}
 
+    def tool_grants(self) -> dict[str, frozenset[str]]:
+        """Registered tool permissions — the source for the authoritative ``ToolPolicy``."""
+        return {key: agent.allowed_tools for key, agent in self._agents.items()}
+
     def get(self, key: str) -> AgentDefinition | None:
         return self._agents.get(key)
 

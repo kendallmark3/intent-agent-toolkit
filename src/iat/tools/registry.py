@@ -1,14 +1,19 @@
-"""Tool registry and governed executor.
+"""Tool registry, authoritative tool policy, and governed executor.
 
-Every tool call goes through ``ToolExecutor.invoke``, which enforces, in order:
+Every tool call goes through ``ToolExecutor``, which enforces, in order:
 
 1. the tool is registered (unregistered tools are denied),
-2. the calling agent is allowed to use it (per-agent allowlist),
+2. the *registered* policy for the executing agent permits it,
 3. the arguments validate against the tool's input model,
 4. the output validates against the tool's output model.
 
-Each attempt — allowed or denied — is recorded as execution evidence. Failures never raise
-into the agent; they come back as a structured ``ToolResult`` so the agent can fail closed.
+Permissions come from ``ToolPolicy``, built once at startup from agent registrations and frozen.
+Agents never pass an allowlist or their own name: the runner binds an ``AgentToolGateway`` to the
+agent it resolved from the registry, and the gateway's ``invoke`` accepts only a tool name and
+arguments. (INTENT-002 finding A: in INTENT-001 the caller supplied ``allowed_tools``.)
+
+Each attempt — allowed or denied — is recorded as execution evidence. Failures never raise into
+the agent; they come back as a structured ``ToolResult`` so the agent can fail closed.
 """
 
 from __future__ import annotations
@@ -16,6 +21,7 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Iterable, Mapping
+from types import MappingProxyType
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
@@ -49,6 +55,28 @@ class ToolRegistry:
         return [self._tools[n].spec() for n in self.names()]
 
 
+class ToolPolicy:
+    """Authoritative, immutable map of agent key -> permitted tool names.
+
+    Built from registrations at startup. Every permitted tool must be registered, so a typo or a
+    missing tool fails at startup rather than at call time.
+    """
+
+    def __init__(self, grants: Mapping[str, Iterable[str]], registry: ToolRegistry) -> None:
+        frozen = {agent: frozenset(tools) for agent, tools in grants.items()}
+        for agent, tools in frozen.items():
+            unknown = sorted(t for t in tools if registry.get(t) is None)
+            if unknown:
+                raise ValueError(f"Agent '{agent}' is granted unregistered tools: {unknown}")
+        self._grants: Mapping[str, frozenset[str]] = MappingProxyType(frozen)
+
+    def permits(self, agent: str, tool_name: str) -> bool:
+        return tool_name in self._grants.get(agent, frozenset())
+
+    def granted(self, agent: str) -> frozenset[str]:
+        return self._grants.get(agent, frozenset())
+
+
 class ExecutionRecorder:
     """Collects tool invocation evidence for one agent execution."""
 
@@ -59,21 +87,44 @@ class ExecutionRecorder:
         self.records.append(record)
 
 
+class AgentToolGateway:
+    """The only tool interface an agent receives. Bound by the runner to one agent and one run."""
+
+    __slots__ = ("_agent", "_executor", "_recorder")
+
+    def __init__(self, executor: ToolExecutor, agent: str, recorder: ExecutionRecorder) -> None:
+        self._executor = executor
+        self._agent = agent
+        self._recorder = recorder
+
+    @property
+    def agent(self) -> str:
+        return self._agent
+
+    def invoke(self, tool_name: str, args: Mapping[str, Any]) -> ToolResult:
+        return self._executor.invoke(
+            agent=self._agent, tool_name=tool_name, args=args, recorder=self._recorder
+        )
+
+
 class ToolExecutor:
-    def __init__(self, registry: ToolRegistry) -> None:
+    def __init__(self, registry: ToolRegistry, policy: ToolPolicy) -> None:
         self._registry = registry
+        self._policy = policy
+
+    def bind(self, agent: str, recorder: ExecutionRecorder) -> AgentToolGateway:
+        return AgentToolGateway(self, agent, recorder)
 
     def invoke(
         self,
         *,
         agent: str,
-        allowed_tools: frozenset[str],
         tool_name: str,
         args: Mapping[str, Any],
         recorder: ExecutionRecorder,
     ) -> ToolResult:
         started = time.perf_counter()
-        result, error_class = self._invoke(agent, allowed_tools, tool_name, args)
+        result, error_class = self._invoke(agent, tool_name, args)
         duration_ms = round((time.perf_counter() - started) * 1000, 3)
         recorder.add(
             ToolInvocationRecord(
@@ -95,16 +146,12 @@ class ToolExecutor:
         return result
 
     def _invoke(
-        self,
-        agent: str,
-        allowed_tools: frozenset[str],
-        tool_name: str,
-        args: Mapping[str, Any],
+        self, agent: str, tool_name: str, args: Mapping[str, Any]
     ) -> tuple[ToolResult, str | None]:
         tool = self._registry.get(tool_name)
         if tool is None:
             return self._denied(tool_name, "Tool is not registered"), "UnregisteredTool"
-        if tool_name not in allowed_tools:
+        if not self._policy.permits(agent, tool_name):
             return (
                 self._denied(tool_name, f"Agent '{agent}' is not authorized for this tool"),
                 "ToolNotAllowed",

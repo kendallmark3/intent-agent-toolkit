@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from iat.core.config import MESSAGE_HARD_CEILING
 from iat.schemas.assessment import SupplierAssessment
 from iat.schemas.execution import ExecutionRecord
 
@@ -14,7 +15,13 @@ from iat.schemas.execution import ExecutionRecord
 class InvokeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    message: str = Field(min_length=1, max_length=2000, examples=["Can Supplier Acme be approved?"])
+    message: str = Field(
+        min_length=1,
+        max_length=MESSAGE_HARD_CEILING,
+        description="The configured limit (IAT_MAX_MESSAGE_CHARS, default 2000) is enforced "
+        "by the runner; this is the absolute ceiling.",
+        examples=["Can Supplier Acme be approved?"],
+    )
     conversation_id: str | None = Field(
         default=None,
         pattern=r"^[0-9a-f]{32}$",
@@ -42,6 +49,9 @@ class ConversationView(BaseModel):
     agent: str
     created_at: dt.datetime
     turns: list[Turn]
+    dropped_turns: int = Field(
+        default=0, description="Older turns removed by the per-conversation retention window."
+    )
 
 
 class ConversationSummary(BaseModel):

@@ -54,7 +54,9 @@ def readiness(container: ContainerDep, response: Response) -> HealthResponse:
 
 
 @api_router.get("/agents", response_model=list[AgentInfo], tags=["agents"])
-def list_agents(container: ContainerDep) -> list[AgentInfo]:
+def list_agents(identity: IdentityDep, container: ContainerDep) -> list[AgentInfo]:
+    # Discovery is part of invoking: same scope (INTENT-002 finding D).
+    identity.require_scope(SCOPE_INVOKE)
     return [a.info() for a in container.agents.all()]
 
 

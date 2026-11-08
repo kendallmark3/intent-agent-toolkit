@@ -1,6 +1,6 @@
 [project]
 name = "intent-agent-toolkit"
-version = "0.1.0"
+version = "0.2.0"
 description = "Intent Agent Toolkit (IAT): an evidence-based foundation for building, evaluating and operating AI agents."
 readme = "README.md"
 license = { text = "MIT" }
@@ -43,6 +43,7 @@ addopts = "-q"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["docs/evidence"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "N", "SIM", "RUF"]

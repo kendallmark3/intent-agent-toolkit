@@ -22,10 +22,11 @@ from iat.core.errors import ErrorCode, IATError
 from iat.core.logging import configure_logging, request_id_var
 from iat.schemas.api import ErrorBody, ErrorEnvelope
 from iat.security.identity import JwtVerifier, TokenVerifier
-from iat.services.conversations import InMemoryConversationRepository
+from iat.security.pseudonym import SubjectPseudonymizer, derive_key
+from iat.services.conversations import ConversationLimits, InMemoryConversationRepository
 from iat.services.runner import AgentRunner
 from iat.services.supplier_repository import SupplierRepository
-from iat.tools.registry import AnyTool, ToolExecutor, ToolRegistry
+from iat.tools.registry import AnyTool, ToolExecutor, ToolPolicy, ToolRegistry
 from iat.tools.supplier_evidence import SupplierEvidenceLookupTool
 
 logger = logging.getLogger("iat.api")
@@ -68,7 +69,17 @@ def create_app(
     suppliers = SupplierRepository.from_json(settings.supplier_data_path)
     tool_registry = ToolRegistry([SupplierEvidenceLookupTool(suppliers), *(extra_tools or [])])
     agent_registry = AgentRegistry(agents if agents is not None else default_agents())
-    conversations = InMemoryConversationRepository()
+    conversations = InMemoryConversationRepository(
+        ConversationLimits(
+            max_conversations=settings.max_conversations,
+            max_conversations_per_owner=settings.max_conversations_per_owner,
+            max_turns_per_conversation=settings.max_turns_per_conversation,
+            max_message_chars=settings.max_message_chars,
+            idle_ttl_seconds=settings.conversation_idle_ttl_seconds,
+        )
+    )
+    # Tool permissions come only from agent registrations (INTENT-002 finding A).
+    executor = ToolExecutor(tool_registry, ToolPolicy(agent_registry.tool_grants(), tool_registry))
     container = Container(
         settings=settings,
         verifier=verifier or JwtVerifier(settings),
@@ -77,7 +88,11 @@ def create_app(
         suppliers=suppliers,
         conversations=conversations,
         runner=AgentRunner(
-            agent_registry, ToolExecutor(tool_registry), conversations, settings.as_of
+            agent_registry,
+            executor,
+            conversations,
+            settings.as_of,
+            SubjectPseudonymizer(derive_key(settings.jwt_secret, settings.subject_pseudonym_key)),
         ),
     )
 

@@ -6,9 +6,12 @@ ai-agents-masterclass ``7-langgraph-agent``, kept minimal):
     identify ──(reference found)──▶ lookup ──▶ assess ──▶ explain ──▶ END
         └────────(no reference)──────────────▶ assess
 
-The graph is compiled once. Per-execution dependencies (tool executor, evidence recorder,
-evaluation date) arrive through ``RunnableConfig["configurable"]`` so the same compiled graph
-is safe to share across concurrent requests and is independent of HTTP.
+The graph is compiled once. Per-execution dependencies (a tool gateway bound to this agent by the
+runner, and the evaluation date) arrive through ``RunnableConfig["configurable"]`` so the same
+compiled graph is safe to share across concurrent requests and is independent of HTTP.
+
+``ALLOWED_TOOLS`` is this agent's *registration request*. It is read once by the agent registry at
+startup; the graph never passes it at call time, so changing it at runtime grants nothing.
 """
 
 from __future__ import annotations
@@ -24,7 +27,7 @@ from langgraph.graph.state import CompiledStateGraph
 from iat.agents.supplier_readiness.narrator import Narrator
 from iat.agents.supplier_readiness.rules import evaluate_evidence
 from iat.schemas.assessment import Decision, EvidenceItem, MissingEvidence, SupplierAssessment
-from iat.tools.registry import ExecutionRecorder, ToolExecutor
+from iat.tools.registry import AgentToolGateway
 from iat.tools.supplier_evidence import SupplierEvidenceLookupTool
 
 AGENT_KEY = "supplier-readiness"
@@ -67,14 +70,9 @@ def build_graph(narrator: Narrator) -> CompiledStateGraph[Any, Any, Any, Any]:
         return "lookup" if state.get("supplier_reference") else "assess"
 
     def lookup(state: SupplierState, config: RunnableConfig) -> SupplierState:
-        cfg = _cfg(config)
-        executor = cast(ToolExecutor, cfg["tool_executor"])
-        result = executor.invoke(
-            agent=AGENT_KEY,
-            allowed_tools=ALLOWED_TOOLS,
-            tool_name=SupplierEvidenceLookupTool.name,
-            args={"supplier_reference": state["supplier_reference"]},
-            recorder=cast(ExecutionRecorder, cfg["recorder"]),
+        tools = cast(AgentToolGateway, _cfg(config)["tools"])
+        result = tools.invoke(
+            SupplierEvidenceLookupTool.name, {"supplier_reference": state["supplier_reference"]}
         )
         return {"lookup": result.model_dump(mode="json")}
 

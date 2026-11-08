@@ -7,18 +7,15 @@ from typing import ClassVar
 import pytest
 from pydantic import BaseModel
 
-from iat.agents.registry import AgentRegistry, default_agents
 from iat.core.config import DEFAULT_DATA_PATH
 from iat.schemas.assessment import Decision, SupplierAssessment
 from iat.schemas.execution import ToolStatus
 from iat.security.identity import Identity
-from iat.services.conversations import InMemoryConversationRepository
-from iat.services.runner import AgentRunner
 from iat.services.supplier_repository import SupplierRepository
 from iat.tools.base import Tool
-from iat.tools.registry import ExecutionRecorder, ToolExecutor, ToolRegistry
+from iat.tools.registry import ExecutionRecorder, ToolExecutor, ToolPolicy, ToolRegistry
 from iat.tools.supplier_evidence import SupplierEvidenceLookupTool
-from tests.conftest import AS_OF
+from tests.conftest import build_runner
 
 LOOKUP = SupplierEvidenceLookupTool.name
 
@@ -57,18 +54,11 @@ def registry(repo: SupplierRepository) -> ToolRegistry:
     return ToolRegistry([SupplierEvidenceLookupTool(repo), DeleteSupplierTool()])
 
 
-def _invoke(
-    registry: ToolRegistry, tool: str, args: dict[str, object], allowed: set[str] | None = None
-):  # type: ignore[no-untyped-def]
+def _invoke(registry: ToolRegistry, tool: str, args: dict[str, object]):  # type: ignore[no-untyped-def]
     recorder = ExecutionRecorder()
-    result = ToolExecutor(registry).invoke(
-        agent="supplier-readiness",
-        allowed_tools=frozenset(allowed if allowed is not None else {LOOKUP}),
-        tool_name=tool,
-        args=args,
-        recorder=recorder,
-    )
-    return result, recorder
+    policy = ToolPolicy({"supplier-readiness": {LOOKUP}}, registry)
+    gateway = ToolExecutor(registry, policy).bind("supplier-readiness", recorder)
+    return gateway.invoke(tool, args), recorder
 
 
 def test_approved_tool_executes(registry: ToolRegistry) -> None:
@@ -79,7 +69,7 @@ def test_approved_tool_executes(registry: ToolRegistry) -> None:
 
 
 def test_unregistered_tool_is_denied(registry: ToolRegistry) -> None:
-    result, recorder = _invoke(registry, "shell_exec", {"cmd": "rm -rf /"}, {"shell_exec"})
+    result, recorder = _invoke(registry, "shell_exec", {"cmd": "rm -rf /"})
     assert result.status is ToolStatus.DENIED
     assert recorder.records[0].error_class == "UnregisteredTool"
 
@@ -119,12 +109,7 @@ def test_tool_failure_is_contained_and_not_leaked() -> None:
 
 def test_agent_fails_closed_when_tool_fails() -> None:
     registry = ToolRegistry([SupplierEvidenceLookupTool(ExplodingRepository([]))])
-    runner = AgentRunner(
-        AgentRegistry(default_agents()),
-        ToolExecutor(registry),
-        InMemoryConversationRepository(),
-        lambda: AS_OF,
-    )
+    runner = build_runner(registry)
     outcome = runner.run(
         agent_key="supplier-readiness",
         message="Can Supplier Acme be approved?",

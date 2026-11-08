@@ -39,6 +39,11 @@ class NotFoundError(IATError):
     code = ErrorCode.NOT_FOUND
 
 
+class InputValidationError(IATError):
+    status_code = 422
+    code = ErrorCode.VALIDATION_ERROR
+
+
 class AgentExecutionError(IATError):
     status_code = 500
     code = ErrorCode.AGENT_EXECUTION_FAILED

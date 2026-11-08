@@ -27,3 +27,29 @@ registered read-only tools, structured execution evidence, and deterministic tes
 - No AWS deployment or AWS dependencies in this progression.
 - No credentials in the repository; no secrets or message content in logs.
 - No multi-agent orchestration; minimum sufficient architecture.
+
+---
+
+# Delta 1 — INTENT-002: Evidence-Driven Hardening
+<!-- Full text: intent/INTENT-002.md. Baseline assessment: docs/assessments/INTENT-001-BASELINE.md -->
+
+## Observation
+RepoIntent self-assessment of INTENT-001 (Radius 3/5, partial 4) found: agents supply their own tool allowlist to the
+executor; logged user identifiers are unsalted truncated SHA-256 (dictionary-reversible); in-memory conversations are
+unbounded; `/v1/agents` has no scope check; the intent gate does not run during local editing; project intent is blank.
+
+## Keep
+FastAPI + LangGraph architecture, public API behaviour, fail-closed auth, owner isolation, deterministic rules, tests.
+
+## Change
+- Tool permissions derive from the agent registry, bound to the executing agent by the runner — not from agent code.
+- Logged user identifiers become keyed pseudonyms.
+- Conversations are bounded by count, per-owner count, turns, message size and idle lifetime (configurable).
+- Listing agents requires a scope; intent gate wired for local Claude Code sessions; project intent filled in.
+
+## New Boundary
+No new infrastructure (no Redis/Postgres), no new agents, no cloud. Baseline assessment preserved unmodified.
+
+## Evidence
+Regression test per finding; full suite, lint, mypy strict, security scans and demo pass; results with real command
+output in docs/INTENT-002-RESULTS.md.
