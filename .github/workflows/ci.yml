@@ -33,3 +33,54 @@ jobs:
         with:
           name: test-results-${{ matrix.python-version }}
           path: test-results.xml
+
+  # INTENT-003: build the real image, run it, and prove runtime behaviour against it.
+  container:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build image
+        run: docker build -t iat:ci .
+      - name: Run container (ephemeral secret)
+        run: |
+          SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          echo "::add-mask::$SECRET"
+          docker run -d --name iat -p 8000:8000 -e IAT_JWT_SECRET="$SECRET" iat:ci
+      - name: Wait for Docker health check
+        run: |
+          for i in $(seq 1 30); do
+            status="$(docker inspect -f '{{.State.Health.Status}}' iat)"
+            echo "health: $status"; [ "$status" = healthy ] && exit 0; sleep 2
+          done
+          docker logs iat; exit 1
+      - name: Runs as non-root
+        run: test "$(docker exec iat id -u)" = "10001"
+      - name: Smoke test (readiness, auth boundary, headers, invocation, regression)
+        run: |
+          TOKEN="$(docker exec iat iat-token --sub ci-smoke)"
+          echo "::add-mask::$TOKEN"
+          echo "TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          python3 scripts/smoke.py --base-url http://127.0.0.1:8000 --token "$TOKEN" --out smoke-report.json
+      - name: Console in a real browser
+        run: |
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium > /dev/null
+          python3 scripts/console_check.py --base-url http://127.0.0.1:8000 --token "$TOKEN" --out console-evidence
+      - name: Logs contain no token or raw subject
+        run: |
+          docker logs iat > container.log 2>&1
+          ! grep -F "$TOKEN" container.log
+          ! grep -F "ci-smoke" container.log
+          grep -c '"event": "agent_execution"' container.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-evidence
+          path: |
+            smoke-report.json
+            console-evidence/
+            container.log

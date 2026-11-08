@@ -1,4 +1,4 @@
-# Security Model — v0.2
+# Security Model — v0.3
 
 ## Guarantees (each backed by tests)
 
@@ -14,6 +14,9 @@
 | Tool input validation | Pydantic, `extra="forbid"`, length + character pattern | `test_tool_inputs_are_validated` |
 | No secrets/content in logs | redacting JSON formatter; identity as keyed HMAC pseudonym; messages never logged | `test_logs_exclude_secrets_and_message_content`, `test_dictionary_attack_without_key_finds_no_match`, `test_logs_and_response_carry_keyed_pseudonym_only` |
 | Bounded memory | conversation count, per-caller count, turns, message size, idle TTL | `tests/test_conversation_bounds.py` |
+| Console cannot bypass auth or inject | static files; same JWT API; strict CSP (`script-src 'self'`, no inline); text-only rendering; tab-scoped token | `test_console_is_served_with_strict_csp`, `test_console_has_no_inline_script_or_remote_assets`, `test_console_script_renders_text_only`, CI browser check (no CSP violations) |
+| Response hardening | `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `no-store` on `/v1` | `test_security_headers_on_all_surfaces`, `test_api_responses_are_not_cached` |
+| Container | non-root (uid 10001), health check, ephemeral secret, logs checked for token/subject leakage | CI `container` job |
 | No internals in errors | uniform envelope; validation errors list field names only | `test_agent_failure_returns_safe_envelope`, `test_validation_errors_do_not_echo_input` |
 | Header injection safe | `X-Request-ID` accepted only if `[A-Za-z0-9._-]{8,64}` | `test_unsafe_request_id_is_replaced` |
 | Fail closed on dependency failure | tool error → `INSUFFICIENT_EVIDENCE`, never `READY` | `test_agent_fails_closed_when_tool_fails` |
@@ -56,6 +59,10 @@ Routes, runner, agents and tools do not change.
   without the key, but anyone holding `IAT_SUBJECT_PSEUDONYM_KEY` (or, when it is unset, the JWT
   secret it is derived from) can recompute them. Rotating that key breaks correlation with older
   logs. This is pseudonymisation, not anonymisation.
+- **Console token handling:** the token sits in `sessionStorage` for the tab, so script running in
+  that origin could read it. The strict CSP and text-only rendering are the controls; an
+  enterprise deployment should use the IdP's browser flow (e.g. OIDC with PKCE) instead of pasted
+  tokens.
 - **Tool policy** protects against agent-controlled inputs. In-process code is trusted; the
   gateway is not a sandbox.
 - **No TLS termination** in-process; deploy behind a TLS-terminating proxy.

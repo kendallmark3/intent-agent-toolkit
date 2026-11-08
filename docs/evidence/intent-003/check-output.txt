@@ -1,0 +1,62 @@
+# INTENT-003 validation — 2026-11-08T14:10:51Z — python 3.13.18
+uv run ruff check .
+All checks passed!
+uv run ruff format --check .
+87 files already formatted
+uv run mypy
+Success: no issues found in 36 source files
+uv run bandit -q -c pyproject.toml -r src
+uv export --no-dev --no-hashes --format requirements-txt -o .audit-requirements.txt -q
+uv run pip-audit -r .audit-requirements.txt --progress-spinner off; status=$?; rm -f .audit-requirements.txt; exit $status
+No known vulnerabilities found
+Name                 Skip Reason
+-------------------- -----------------------------------------------------------------------------------
+intent-agent-toolkit Dependency not found on PyPI and could not be audited: intent-agent-toolkit (0.3.0)
+uv run pytest
+........................................................................ [ 49%]
+........................................................................ [ 98%]
+..                                                                       [100%]
+146 passed in 2.22s
+bash hooks/pre-implement.sh
+pre-implement: intent/current-feature.md is sufficient to start.
+bash tests/pre-implement.test.sh
+ok   - INTENT-001 current-feature.md is sufficient
+ok   - blank feature template is not sufficient
+ok   - missing file fails
+ok   - outcome and evidence alone are sufficient
+ok   - previous format is still accepted
+ok   - outcome without evidence is not sufficient
+ok   - names only the missing section
+ok   - guidance comments do not count as content
+ok   - an appended delta keeps the intent sufficient
+ok   - hook leaves projects without an intent file alone
+ok   - hook blocks code edits while the intent is blank
+ok   - hook never blocks Markdown, so the intent can be written
+ok   - hook allows code edits once the intent is sufficient
+ok   - hook skips the starter's own repository
+ok   - hook still gates other plugin repositories
+all tests passed
+make_check_exit=0
+uv run python examples/supplier_readiness/demo.py
+[PASS] ready-supplier: Can Supplier Acme be approved for onboarding?
+       decision=READY supplier=SUP-001 path=identify → lookup → assess → explain
+       Acme Industrial Supply satisfies all 5 required onboarding checks based on the evidence on file.
+[PASS] failed-checks: Is supplier Cobalt Ridge ready to onboard?
+       decision=NOT_READY supplier=SUP-002 path=identify → lookup → assess → explain
+       Cobalt Ridge Components is not ready for onboarding: Sanctions screening: potential_match; Insurance certificate expired on 2025-03-31.
+[PASS] missing-evidence-not-invented: Can Supplier Lumen be approved?
+       decision=INSUFFICIENT_EVIDENCE supplier=SUP-003 path=identify → lookup → assess → explain
+       Lumen Freight Partners cannot be assessed as ready because required evidence is missing: Insurance certificate: no record on file; Bank account verification: no record on file; Supplier code of conduct: no record on file. No missing evidence was assumed.
+[PASS] unknown-supplier: Can Supplier Zenith be approved?
+       decision=INSUFFICIENT_EVIDENCE supplier=None path=identify → lookup → assess → explain
+       The supplier cannot be assessed as ready because required evidence is missing: No supplier record found for 'Zenith'. No missing evidence was assumed.
+[PASS] no-supplier-named: Can we onboard them?
+       decision=INSUFFICIENT_EVIDENCE supplier=None path=identify → assess → explain
+       The supplier cannot be assessed as ready because required evidence is missing: No supplier id or name could be identified in the request. No missing evidence was assumed.
+[PASS] lookup-by-id: Assess SUP-002 for onboarding readiness.
+       decision=NOT_READY supplier=SUP-002 path=identify → lookup → assess → explain
+       Cobalt Ridge Components is not ready for onboarding: Sanctions screening: potential_match; Insurance certificate expired on 2025-03-31.
+[PASS] Unauthenticated request rejected with 401
+
+7/7 demo checks passed
+make_demo_exit=0

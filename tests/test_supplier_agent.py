@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
+from dataclasses import dataclass
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +14,7 @@ from iat.agents.supplier_readiness.rules import REQUIRED_CHECKS, evaluate_eviden
 from iat.core.config import DEFAULT_DATA_PATH
 from iat.schemas.api import InvokeResponse
 from iat.schemas.assessment import CheckOutcome, Decision, SupplierAssessment
+from iat.schemas.execution import ExecutionRecord
 from iat.security.identity import Identity
 from iat.services.supplier_repository import SupplierRecord, SupplierRepository
 from iat.tools.registry import ToolRegistry
@@ -23,11 +25,19 @@ Auth = Callable[[str], dict[str, str]]
 ALL_CHECKS = {c.key for c in REQUIRED_CHECKS}
 
 
-def _ask(client: TestClient, auth: Auth, message: str) -> InvokeResponse:
+@dataclass(frozen=True)
+class Answer:
+    output: SupplierAssessment
+    execution: ExecutionRecord
+
+
+def _ask(client: TestClient, auth: Auth, message: str) -> Answer:
     response = client.post(INVOKE, json={"message": message}, headers=auth("alice"))
     assert response.status_code == 200, response.text
-    # Structured output validation: the whole response must satisfy the published contract.
-    return InvokeResponse.model_validate(response.json())
+    # Structured output validation: the envelope must satisfy the agent-neutral API contract,
+    # and its output must satisfy this agent's own output model.
+    envelope = InvokeResponse.model_validate(response.json())
+    return Answer(SupplierAssessment.model_validate(envelope.output), envelope.execution)
 
 
 def test_ready_supplier(client: TestClient, auth: Auth) -> None:

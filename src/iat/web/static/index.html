@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Intent Agent Toolkit — Console</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="brand-name">Intent Agent Toolkit</span>
+      <span class="brand-sub">Agent Console</span>
+    </div>
+    <div class="status" id="health"><span class="dot"></span><span id="health-text">Checking service…</span></div>
+  </header>
+
+  <main>
+    <section class="card" id="access">
+      <div class="card-head">
+        <h2>Access</h2>
+        <span class="muted" id="who">Not signed in</span>
+      </div>
+      <p class="muted">Paste a bearer token. Generate one locally with <code>make token</code>. The console uses the same authenticated API as any client; it cannot bypass sign-in.</p>
+      <div class="row">
+        <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="eyJhbGciOi…">
+        <button id="connect" class="primary">Connect</button>
+        <button id="disconnect" class="ghost">Clear</button>
+      </div>
+      <p class="message" id="access-msg" role="status"></p>
+    </section>
+
+    <section class="card" id="run" hidden>
+      <div class="card-head">
+        <h2>Run an agent</h2>
+        <select id="agent" aria-label="Agent"></select>
+      </div>
+      <p class="muted" id="agent-desc"></p>
+      <div class="workflow" id="workflow-plan" aria-label="Workflow"></div>
+      <label class="label" for="message">Question</label>
+      <textarea id="message" rows="3" maxlength="8000" placeholder="Can Supplier Acme be approved for onboarding?"></textarea>
+      <div class="examples" id="examples"></div>
+      <div class="row between">
+        <label class="check"><input type="checkbox" id="continue"> Continue conversation <span class="mono muted" id="conv-id"></span></label>
+        <div class="row">
+          <span class="muted small" id="char-count">0 characters</span>
+          <button id="invoke" class="primary">Run agent</button>
+        </div>
+      </div>
+      <p class="message" id="run-msg" role="status"></p>
+    </section>
+
+    <section class="card" id="result" hidden>
+      <div class="card-head">
+        <h2>Result</h2>
+        <span class="badge" id="decision"></span>
+      </div>
+      <p class="lead" id="explanation"></p>
+      <dl class="facts" id="facts"></dl>
+
+      <h3>Workflow path</h3>
+      <div class="workflow" id="workflow-run"></div>
+
+      <div class="grid2">
+        <div>
+          <h3>Supporting evidence</h3>
+          <table class="table" id="supporting"><thead><tr><th>Check</th><th>Outcome</th><th>Detail</th><th>Source</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div>
+          <h3>Missing evidence</h3>
+          <ul class="list" id="missing"></ul>
+        </div>
+      </div>
+
+      <h3>Execution evidence</h3>
+      <dl class="facts" id="execution"></dl>
+      <table class="table" id="tools"><thead><tr><th>Tool</th><th>Status</th><th>Duration (ms)</th><th>Error class</th></tr></thead><tbody></tbody></table>
+
+      <details>
+        <summary>Raw response</summary>
+        <pre id="raw"></pre>
+      </details>
+    </section>
+
+    <section class="card" id="regression" hidden>
+      <div class="card-head">
+        <h2>Regression</h2>
+        <span class="badge" id="reg-summary"></span>
+      </div>
+      <p class="muted">Runs the regression cases declared with this agent through the live service and compares each decision with its expectation.</p>
+      <div class="row">
+        <button id="run-regression" class="primary">Run regression suite</button>
+        <button id="download" class="ghost" disabled>Download evidence (JSON)</button>
+      </div>
+      <p class="message" id="reg-msg" role="status"></p>
+      <table class="table" id="reg-table" hidden><thead><tr><th></th><th>Case</th><th>Question</th><th>Expected</th><th>Actual</th><th>Execution</th><th>ms</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section class="card" id="history" hidden>
+      <div class="card-head"><h2>This session</h2><span class="muted" id="history-count"></span></div>
+      <table class="table" id="history-table"><thead><tr><th>Time</th><th>Question</th><th>Decision</th><th>Steps</th><th>Execution</th></tr></thead><tbody></tbody></table>
+    </section>
+  </main>
+
+  <footer class="foot muted small">Synthetic data only. Evidence downloads contain execution ids and keyed caller pseudonyms, never tokens.</footer>
+</body>
+</html>

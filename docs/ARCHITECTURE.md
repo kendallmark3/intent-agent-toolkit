@@ -1,4 +1,4 @@
-# Architecture — Intent Agent Toolkit v0.2
+# Architecture — Intent Agent Toolkit v0.3
 
 ## Shape
 
@@ -108,3 +108,30 @@ identity, tokens and secrets are never logged.
 | `Tool.spec()` | JSON-Schema spec per tool | MCP adapter / governed registry (INTENT-002) |
 | `Narrator` | `TemplateNarrator` | model-backed narrator behind a gateway |
 | `AgentRunner.run` | called by FastAPI routes | AgentCore Runtime `/invocations` entrypoint |
+
+## Web console and runtime evidence (INTENT-003)
+
+```
+browser ── /ui/ (static, strict CSP) ──fetch──▶ /v1/* (same JWT, same scopes)
+                                              │
+            POST /v1/agents/{key}/invoke ─────┤ ExecutionRecord.steps = workflow path + timings
+            POST /v1/agents/{key}/regression ─┘ runs AgentDefinition.regression_cases via AgentRunner
+```
+
+- **Workflow trace:** the runner executes graphs with `stream(stream_mode=["updates", "values"])`.
+  Each finished node becomes a `StepRecord` (node, elapsed ms); the last `values` chunk is the final
+  state. Nodes that did not run (e.g. `lookup` when no supplier is named) are absent, so the path
+  the agent took is evidence.
+- **Agent metadata:** `AgentDefinition` carries `examples` and `regression_cases`; `workflow` is
+  read from the compiled graph. `GET /v1/agents` publishes all three, so the console needs no
+  per-agent code.
+- **One set of expectations:** regression cases live with the agent and are used by the console,
+  the regression endpoint, `examples/.../demo.py`, `scripts/smoke.py` and the CI container job.
+- **Console security:** static files only; `script-src 'self'`, no inline script or handlers, no
+  remote assets; all API data rendered with `textContent`; token in `sessionStorage` for the tab
+  only; never written into evidence downloads.
+- **Headers:** every response gets `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy:
+  no-referrer`; `/v1/*` adds `Cache-Control: no-store`; `/ui/*` adds the strict CSP. Swagger at
+  `/docs` keeps working because the strict CSP is scoped to the console.
+- **Container:** built as a non-editable package on a pinned uv, runs as uid 10001 with a Docker
+  health check; CI builds, runs, smoke-tests and browser-tests it.

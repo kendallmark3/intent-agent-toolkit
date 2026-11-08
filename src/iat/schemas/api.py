@@ -8,7 +8,6 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from iat.core.config import MESSAGE_HARD_CEILING
-from iat.schemas.assessment import SupplierAssessment
 from iat.schemas.execution import ExecutionRecord
 
 
@@ -30,9 +29,15 @@ class InvokeRequest(BaseModel):
 
 
 class InvokeResponse(BaseModel):
+    """Agent-neutral envelope. ``output`` is the invoked agent's own output model, already
+    validated by the runner against ``AgentDefinition.output_model`` (independent finding C-026)."""
+
     conversation_id: str
     request_id: str | None
-    output: SupplierAssessment
+    output: dict[str, Any] = Field(
+        description="The agent's structured output; its schema depends on the agent "
+        "(supplier-readiness returns a SupplierAssessment)."
+    )
     execution: ExecutionRecord
 
 
@@ -65,6 +70,33 @@ class AgentInfo(BaseModel):
     key: str
     description: str
     allowed_tools: list[str]
+    workflow: list[str] = Field(
+        default_factory=list, description="Graph nodes, in definition order."
+    )
+    examples: list[str] = Field(default_factory=list, description="Example inputs for UIs.")
+    regression_cases: int = 0
+
+
+class RegressionCaseResult(BaseModel):
+    name: str
+    message: str
+    passed: bool
+    expected: dict[str, Any]
+    actual: dict[str, Any]
+    execution_id: str | None = None
+    duration_ms: float
+    error: str | None = None
+
+
+class RegressionReport(BaseModel):
+    agent: str
+    version: str
+    request_id: str | None
+    started_at: dt.datetime
+    total: int
+    passed: int
+    failed: int
+    cases: list[RegressionCaseResult]
 
 
 class HealthResponse(BaseModel):

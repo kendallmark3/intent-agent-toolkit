@@ -6,10 +6,12 @@ import logging
 import re
 import uuid
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 
@@ -32,6 +34,20 @@ from iat.tools.supplier_evidence import SupplierEvidenceLookupTool
 logger = logging.getLogger("iat.api")
 
 REQUEST_ID_HEADER = "X-Request-ID"
+CONSOLE_DIR = Path(__file__).resolve().parent.parent / "web" / "static"
+
+# Applied to every response.
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+}
+# The console loads only its own files, renders data as text, and cannot be framed.
+CONSOLE_CSP = (
+    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+    "connect-src 'self'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'"
+)
 _SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9._\-]{8,64}$")
 
 
@@ -107,6 +123,12 @@ def create_app(
     app.state.container = container
     app.include_router(health_router)
     app.include_router(api_router)
+    # Web console (INTENT-003): static files only; it calls the same authenticated API.
+    app.mount("/ui", StaticFiles(directory=CONSOLE_DIR, html=True), name="console")
+
+    @app.get("/", include_in_schema=False)
+    def root() -> RedirectResponse:
+        return RedirectResponse("/ui/")
 
     @app.middleware("http")
     async def request_context(
@@ -121,6 +143,13 @@ def create_app(
         finally:
             request_id_var.reset(token)
         response.headers[REQUEST_ID_HEADER] = request_id
+        for name, value in SECURITY_HEADERS.items():
+            response.headers.setdefault(name, value)
+        path = request.url.path
+        if path.startswith("/ui"):
+            response.headers["Content-Security-Policy"] = CONSOLE_CSP
+        if path.startswith("/v1/"):
+            response.headers["Cache-Control"] = "no-store"  # responses carry user data
         return response
 
     @app.exception_handler(IATError)

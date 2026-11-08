@@ -26,6 +26,13 @@ class ToolInvocationRecord(BaseModel):
     error_class: str | None = None
 
 
+class StepRecord(BaseModel):
+    """One workflow node that ran, in order. Timing is elapsed since the previous step."""
+
+    node: str
+    duration_ms: float
+
+
 class ExecutionRecord(BaseModel):
     request_id: str | None
     execution_id: str
@@ -33,6 +40,9 @@ class ExecutionRecord(BaseModel):
     subject_hash: str = Field(
         description="Keyed pseudonym of the caller (HMAC-SHA256, 128 bits). Correlates one "
         "caller's runs; cannot be recomputed from a user name without the server key."
+    )
+    steps: list[StepRecord] = Field(
+        default_factory=list, description="Workflow nodes that ran, in order (INTENT-003)."
     )
     tools_invoked: list[ToolInvocationRecord] = Field(default_factory=list)
     status: ExecutionStatus

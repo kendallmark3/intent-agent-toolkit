@@ -1,0 +1,197 @@
+{
+  "kind": "iat-smoke",
+  "base_url": "http://127.0.0.1:8000",
+  "version": "0.3.0",
+  "at": "2026-11-08T14:11:12Z",
+  "passed": true,
+  "checks": [
+    {
+      "check": "service becomes ready",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "readiness reports all dependencies",
+      "passed": true,
+      "detail": {
+        "status": "ok",
+        "version": "0.3.0",
+        "checks": {
+          "supplier_data_loaded": true,
+          "agents_registered": true,
+          "tools_registered": true
+        }
+      }
+    },
+    {
+      "check": "unauthenticated invoke is rejected",
+      "passed": true,
+      "detail": 401
+    },
+    {
+      "check": "console is served with a strict CSP",
+      "passed": true,
+      "detail": 200
+    },
+    {
+      "check": "security headers present",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "token can list agents",
+      "passed": true,
+      "detail": 200
+    },
+    {
+      "check": "supplier-readiness: example invocation completes with a workflow trace",
+      "passed": true,
+      "detail": [
+        "identify",
+        "lookup",
+        "assess",
+        "explain"
+      ]
+    },
+    {
+      "check": "supplier-readiness: regression suite",
+      "passed": true,
+      "detail": "6/6"
+    }
+  ],
+  "regressions": [
+    {
+      "agent": "supplier-readiness",
+      "version": "0.3.0",
+      "request_id": "6cda331a927b4b77ba02ea95e1180e65",
+      "started_at": "2026-11-08T14:11:12.552701Z",
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "ready-supplier",
+          "message": "Can Supplier Acme be approved for onboarding?",
+          "passed": true,
+          "expected": {
+            "decision": "READY",
+            "supplier_id": "SUP-001",
+            "missing_evidence.check": []
+          },
+          "actual": {
+            "decision": "READY",
+            "supplier_id": "SUP-001",
+            "missing_evidence.check": []
+          },
+          "execution_id": "19bad51436bd416999db2ada91f4d589",
+          "duration_ms": 1.616,
+          "error": null
+        },
+        {
+          "name": "failed-checks",
+          "message": "Is supplier Cobalt Ridge ready to onboard?",
+          "passed": true,
+          "expected": {
+            "decision": "NOT_READY",
+            "supplier_id": "SUP-002",
+            "missing_evidence.check": []
+          },
+          "actual": {
+            "decision": "NOT_READY",
+            "supplier_id": "SUP-002",
+            "missing_evidence.check": []
+          },
+          "execution_id": "1ba76d72dd2a4c0eb4a10c29c5db8caf",
+          "duration_ms": 1.258,
+          "error": null
+        },
+        {
+          "name": "missing-evidence-not-invented",
+          "message": "Can Supplier Lumen be approved?",
+          "passed": true,
+          "expected": {
+            "decision": "INSUFFICIENT_EVIDENCE",
+            "supplier_id": "SUP-003",
+            "missing_evidence.check": [
+              "bank_account_verification",
+              "code_of_conduct",
+              "insurance_certificate"
+            ]
+          },
+          "actual": {
+            "decision": "INSUFFICIENT_EVIDENCE",
+            "supplier_id": "SUP-003",
+            "missing_evidence.check": [
+              "bank_account_verification",
+              "code_of_conduct",
+              "insurance_certificate"
+            ]
+          },
+          "execution_id": "460d1bd63b5f44a7a05be2902edaac42",
+          "duration_ms": 1.179,
+          "error": null
+        },
+        {
+          "name": "unknown-supplier",
+          "message": "Can Supplier Zenith be approved?",
+          "passed": true,
+          "expected": {
+            "decision": "INSUFFICIENT_EVIDENCE",
+            "supplier_id": null,
+            "missing_evidence.check": [
+              "supplier_record"
+            ]
+          },
+          "actual": {
+            "decision": "INSUFFICIENT_EVIDENCE",
+            "supplier_id": null,
+            "missing_evidence.check": [
+              "supplier_record"
+            ]
+          },
+          "execution_id": "05bfda2981304078a876b11fbdfa88e8",
+          "duration_ms": 1.178,
+          "error": null
+        },
+        {
+          "name": "no-supplier-named",
+          "message": "Can we onboard them?",
+          "passed": true,
+          "expected": {
+            "decision": "INSUFFICIENT_EVIDENCE",
+            "supplier_id": null,
+            "missing_evidence.check": [
+              "supplier_identity"
+            ]
+          },
+          "actual": {
+            "decision": "INSUFFICIENT_EVIDENCE",
+            "supplier_id": null,
+            "missing_evidence.check": [
+              "supplier_identity"
+            ]
+          },
+          "execution_id": "ba44a728f3f6470a89535f81bfec0d4e",
+          "duration_ms": 0.953,
+          "error": null
+        },
+        {
+          "name": "lookup-by-id",
+          "message": "Assess SUP-002 for onboarding readiness.",
+          "passed": true,
+          "expected": {
+            "decision": "NOT_READY",
+            "supplier_id": "SUP-002"
+          },
+          "actual": {
+            "decision": "NOT_READY",
+            "supplier_id": "SUP-002"
+          },
+          "execution_id": "4558f64a7fbe4b1bb15dc6efa9e8e562",
+          "duration_ms": 1.313,
+          "error": null
+        }
+      ]
+    }
+  ]
+}
