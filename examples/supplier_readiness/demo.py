@@ -1,70 +1,62 @@
 """Reproducible Supplier Readiness demonstration.
 
-Runs the real application in-process (same app factory, auth, tools and graph as the server),
-with an ephemeral signing secret generated at runtime and a pinned assessment date, then
-compares each result with expected.json. Exits non-zero on any mismatch.
+Runs the real application in-process (same app factory, auth, tools and graph as the server)
+with an ephemeral signing secret, invokes each of the agent's declared regression cases through
+the HTTP API, and checks the unauthenticated boundary. Exits non-zero on any mismatch.
+
+The cases live with the agent (src/iat/agents/supplier_readiness/regression_cases.json), so this
+demo, the console, the smoke script and CI all check the same expectations.
 
     uv run python examples/supplier_readiness/demo.py
 """
 
 from __future__ import annotations
 
-import datetime as dt
-import json
 import secrets
 import sys
-from pathlib import Path
 
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
+from iat.agents.registry import default_agents
 from iat.api.app import create_app
 from iat.core.config import Settings
 from iat.security.dev_tokens import issue_token
+from iat.services.regression import evaluate
 
-HERE = Path(__file__).parent
-EXPECTED = json.loads((HERE / "expected.json").read_text())
+AGENT = "supplier-readiness"
 
 
 def main() -> int:
     settings = Settings(
         jwt_secret=SecretStr(secrets.token_urlsafe(48)),
-        assessment_date=dt.date.fromisoformat(EXPECTED["as_of"]),
         log_level="WARNING",
         _env_file=None,  # type: ignore[call-arg]
     )
     headers = {"Authorization": f"Bearer {issue_token(settings, 'demo-user')}"}
+    (agent,) = [a for a in default_agents() if a.key == AGENT]
     failures = 0
     with TestClient(create_app(settings)) as client:
-        for case in EXPECTED["cases"]:
+        for case in agent.regression_cases:
             response = client.post(
-                "/v1/agents/supplier-readiness/invoke",
-                json={"message": case["question"]},
-                headers=headers,
+                f"/v1/agents/{AGENT}/invoke", json={"message": case.message}, headers=headers
             )
             body = response.json()
             out = body["output"]
-            actual = {
-                "supplier_id": out["supplier_id"],
-                "decision": out["decision"],
-                "missing_evidence": sorted(m["check"] for m in out["missing_evidence"]),
-            }
-            want = {k: case[k] for k in actual}
-            status = "PASS" if (response.status_code == 200 and actual == want) else "FAIL"
-            failures += status == "FAIL"
-            print(f"[{status}] {case['question']}")
-            print(f"       decision={out['decision']} supplier={out['supplier_id']}")
+            passed, _ = evaluate(case.expect, out)
+            passed = passed and response.status_code == 200
+            failures += not passed
+            steps = " → ".join(s["node"] for s in body["execution"]["steps"])
+            print(f"[{'PASS' if passed else 'FAIL'}] {case.name}: {case.message}")
+            print(f"       decision={out['decision']} supplier={out['supplier_id']} path={steps}")
             print(f"       {out['explanation']}")
-            tools = [f"{t['tool']}:{t['status']}" for t in body["execution"]["tools_invoked"]]
-            print(f"       execution_id={body['execution']['execution_id']} tools={tools}")
-        unauth = client.post("/v1/agents/supplier-readiness/invoke", json={"message": "x"})
+        unauth = client.post(f"/v1/agents/{AGENT}/invoke", json={"message": "x"})
         ok = unauth.status_code == 401
         failures += not ok
         label = "PASS" if ok else "FAIL"
         print(f"[{label}] Unauthenticated request rejected with {unauth.status_code}")
-    print(
-        f"\n{len(EXPECTED['cases']) + 1 - failures}/{len(EXPECTED['cases']) + 1} demo checks passed"
-    )
+    total = len(agent.regression_cases) + 1
+    print(f"\n{total - failures}/{total} demo checks passed")
     return 1 if failures else 0
 
 

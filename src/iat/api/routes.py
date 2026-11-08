@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Path, Request, Response, status
 
 from iat import __version__
 from iat.api.dependencies import ContainerDep, IdentityDep, get_identity
+from iat.core.errors import NotFoundError
 from iat.schemas.api import (
     AgentInfo,
     ConversationSummary,
@@ -14,8 +15,10 @@ from iat.schemas.api import (
     HealthResponse,
     InvokeRequest,
     InvokeResponse,
+    RegressionReport,
 )
 from iat.security.identity import SCOPE_INVOKE, SCOPE_READ_CONVERSATIONS
+from iat.services.regression import run_regression
 
 health_router = APIRouter(tags=["health"])
 
@@ -88,6 +91,31 @@ def invoke_agent(
             "output": outcome.output.model_dump(),
             "execution": outcome.execution,
         }
+    )
+
+
+@api_router.post(
+    "/agents/{agent_key}/regression",
+    response_model=RegressionReport,
+    tags=["agents"],
+)
+def run_agent_regression(
+    request: Request,
+    identity: IdentityDep,
+    container: ContainerDep,
+    agent_key: str = Path(pattern=r"^[a-z0-9\-]{1,64}$"),
+) -> RegressionReport:
+    """Run the agent's declared regression cases as the caller and report pass/fail per case."""
+    identity.require_scope(SCOPE_INVOKE)
+    agent = container.agents.get(agent_key)
+    if agent is None:
+        raise NotFoundError(f"Unknown agent: {agent_key}")
+    return run_regression(
+        container.runner,
+        agent.key,
+        agent.regression_cases,
+        identity,
+        getattr(request.state, "request_id", None),
     )
 
 

@@ -14,12 +14,13 @@ import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, cast
 
 from pydantic import BaseModel, ValidationError
 
 from iat.agents.registry import AgentRegistry
 from iat.core.errors import AgentExecutionError, InputValidationError, NotFoundError
-from iat.schemas.execution import ExecutionRecord, ExecutionStatus
+from iat.schemas.execution import ExecutionRecord, ExecutionStatus, StepRecord
 from iat.security.identity import Identity
 from iat.services.conversations import ConversationRepository, turn
 from iat.tools.registry import ExecutionRecorder, ToolExecutor
@@ -71,12 +72,15 @@ class AgentRunner:
         recorder = ExecutionRecorder()
         started = time.perf_counter()
 
+        steps: list[StepRecord] = []
+
         def record(status: ExecutionStatus, error_class: str | None = None) -> ExecutionRecord:
             evidence = ExecutionRecord(
                 request_id=request_id,
                 execution_id=execution_id,
                 agent=agent.key,
                 subject_hash=self._pseudonymize(identity.subject),
+                steps=list(steps),
                 tools_invoked=list(recorder.records),
                 status=status,
                 duration_ms=round((time.perf_counter() - started) * 1000, 3),
@@ -87,7 +91,11 @@ class AgentRunner:
             return evidence
 
         try:
-            state = agent.graph.invoke(
+            state: dict[str, Any] = {}
+            mark = time.perf_counter()
+            # "updates" yields each node as it finishes (the workflow trace); "values" yields the
+            # full state after each step, so the last one is the final state.
+            for mode, chunk in agent.graph.stream(
                 {"message": message},
                 config={
                     "configurable": {
@@ -98,7 +106,17 @@ class AgentRunner:
                         "as_of": self._clock(),
                     }
                 },
-            )
+                stream_mode=["updates", "values"],
+            ):
+                if mode == "updates":
+                    now = time.perf_counter()
+                    for node in chunk:
+                        steps.append(
+                            StepRecord(node=node, duration_ms=round((now - mark) * 1000, 3))
+                        )
+                    mark = now
+                elif mode == "values":
+                    state = cast(dict[str, Any], chunk)
             output = agent.output_model.model_validate(state[agent.output_key])
         except (ValidationError, KeyError) as exc:
             record(ExecutionStatus.FAILED, f"InvalidAgentOutput:{type(exc).__name__}")

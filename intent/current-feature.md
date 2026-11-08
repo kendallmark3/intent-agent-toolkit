@@ -53,3 +53,29 @@ No new infrastructure (no Redis/Postgres), no new agents, no cloud. Baseline ass
 ## Evidence
 Regression test per finding; full suite, lint, mypy strict, security scans and demo pass; results with real command
 output in docs/INTENT-002-RESULTS.md.
+
+---
+
+# Delta 2 — INTENT-003: Run It (web console, workflow evidence, runtime proof)
+<!-- Full text: intent/INTENT-003.md. Assessment at start: docs/assessments/INTENT-002-REPOINTENT.md -->
+
+## Observation
+v0.2 is hardened but only exercised through tests and curl. The container has never run; runtime
+claims rest on recorded artifacts. The owner wants to run and see the agent from VS Code.
+
+## Keep
+Everything from INTENT-001/002: fail-closed auth, registration-derived tool policy, pseudonyms,
+bounded memory, deterministic rules, tests.
+
+## Change
+- Web console at `/ui/` with form, workflow trace, evidence, regression panel and evidence download.
+- Execution records include workflow steps; agents publish examples, workflow nodes, regression cases.
+- Smoke script for any running deployment; CI builds, runs, and smoke-tests the container.
+- VS Code setup; template guide for the next agent; README test-count drift fixed.
+
+## New Boundary
+No auth bypass or token-minting endpoint; console renders output as text only under a strict CSP.
+
+## Evidence
+Console exercised against a live server; regression cases pass via console/API/smoke/CI container;
+full gate passes; results in docs/INTENT-003-RESULTS.md.

@@ -1,0 +1,12 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "checks": {
+    "sign_in": true,
+    "ready_example": "Acme Industrial Supply satisfies all 5 required onboarding checks based on the evidence on file.",
+    "lookup_skipped_without_supplier": true,
+    "regression": "6 / 6 passed",
+    "sign_out_hides_console": true
+  },
+  "browser_errors": [],
+  "passed": true
+}

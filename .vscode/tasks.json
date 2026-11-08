@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "IAT: Setup (.venv + .env)", "type": "shell", "command": "make setup", "problemMatcher": [] },
+    { "label": "IAT: Run service", "type": "shell", "command": "make run", "isBackground": true, "problemMatcher": [] },
+    { "label": "IAT: Token (copy into console)", "type": "shell", "command": "make token", "problemMatcher": [] },
+    { "label": "IAT: Smoke test running service", "type": "shell", "command": "make smoke", "problemMatcher": [] },
+    { "label": "IAT: Demo", "type": "shell", "command": "make demo", "problemMatcher": [] },
+    { "label": "IAT: Tests", "type": "shell", "command": "make test", "group": { "kind": "test", "isDefault": true }, "problemMatcher": [] },
+    { "label": "IAT: Full check (lint, types, security, tests, intent)", "type": "shell", "command": "make check", "group": "build", "problemMatcher": [] }
+  ]
+}

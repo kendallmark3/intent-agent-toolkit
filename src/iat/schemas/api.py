@@ -65,6 +65,33 @@ class AgentInfo(BaseModel):
     key: str
     description: str
     allowed_tools: list[str]
+    workflow: list[str] = Field(
+        default_factory=list, description="Graph nodes, in definition order."
+    )
+    examples: list[str] = Field(default_factory=list, description="Example inputs for UIs.")
+    regression_cases: int = 0
+
+
+class RegressionCaseResult(BaseModel):
+    name: str
+    message: str
+    passed: bool
+    expected: dict[str, Any]
+    actual: dict[str, Any]
+    execution_id: str | None = None
+    duration_ms: float
+    error: str | None = None
+
+
+class RegressionReport(BaseModel):
+    agent: str
+    version: str
+    request_id: str | None
+    started_at: dt.datetime
+    total: int
+    passed: int
+    failed: int
+    cases: list[RegressionCaseResult]
 
 
 class HealthResponse(BaseModel):

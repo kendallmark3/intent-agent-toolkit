@@ -1,0 +1,39 @@
+{
+  "_notice": "Regression cases for supplier-readiness. Synthetic data. Valid while Acme's synthetic insurance (expires 2030-06-30) is current.",
+  "cases": [
+    {
+      "name": "ready-supplier",
+      "message": "Can Supplier Acme be approved for onboarding?",
+      "expect": {"decision": "READY", "supplier_id": "SUP-001", "missing_evidence.check": []}
+    },
+    {
+      "name": "failed-checks",
+      "message": "Is supplier Cobalt Ridge ready to onboard?",
+      "expect": {"decision": "NOT_READY", "supplier_id": "SUP-002", "missing_evidence.check": []}
+    },
+    {
+      "name": "missing-evidence-not-invented",
+      "message": "Can Supplier Lumen be approved?",
+      "expect": {
+        "decision": "INSUFFICIENT_EVIDENCE",
+        "supplier_id": "SUP-003",
+        "missing_evidence.check": ["bank_account_verification", "code_of_conduct", "insurance_certificate"]
+      }
+    },
+    {
+      "name": "unknown-supplier",
+      "message": "Can Supplier Zenith be approved?",
+      "expect": {"decision": "INSUFFICIENT_EVIDENCE", "supplier_id": null, "missing_evidence.check": ["supplier_record"]}
+    },
+    {
+      "name": "no-supplier-named",
+      "message": "Can we onboard them?",
+      "expect": {"decision": "INSUFFICIENT_EVIDENCE", "supplier_id": null, "missing_evidence.check": ["supplier_identity"]}
+    },
+    {
+      "name": "lookup-by-id",
+      "message": "Assess SUP-002 for onboarding readiness.",
+      "expect": {"decision": "NOT_READY", "supplier_id": "SUP-002"}
+    }
+  ]
+}
