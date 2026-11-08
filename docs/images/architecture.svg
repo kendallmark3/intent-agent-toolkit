@@ -1,0 +1,369 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1580" width="1600" height="1580" font-family="Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>Intent Agent Toolkit: what runs when an agent is invoked</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1022"/>
+      <stop offset="1" stop-color="#0e1529"/>
+    </linearGradient>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#cbd5e1"/>
+    </marker>
+    <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#34d399"/>
+    </marker>
+    <marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#fb923c"/>
+    </marker>
+    <style>
+      .h1 { font-size: 34px; font-weight: 800; fill: #f8fafc; letter-spacing: -0.5px; }
+      .sub { font-size: 15px; fill: #94a3b8; }
+      .ph { font-size: 17px; font-weight: 700; fill: #f8fafc; }
+      .pp { font-size: 12.5px; fill: #94a3b8; font-family: 'JetBrains Mono', Menlo, Consolas, monospace; }
+      .ct { font-size: 14px; font-weight: 700; fill: #f1f5f9; }
+      .cs { font-size: 12px; fill: #a5b4c8; }
+      .mono { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; }
+      .tag { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; }
+      .lbl { font-size: 12px; fill: #cbd5e1; }
+      .num { font-size: 11px; font-weight: 800; fill: #0b1022; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1580" fill="url(#bg)"/>
+
+  <!-- ============ TITLE ============ -->
+  <text x="60" y="62" class="h1">What actually runs when you ask an agent a question</text>
+  <text x="60" y="92" class="sub">Intent Agent Toolkit v0.3 · Supplier Readiness reference agent · built in INTENT-001 → 003 · Python · FastAPI · LangGraph · zero LLM calls today</text>
+
+  <!-- ============ A. CALLERS ============ -->
+  <g>
+    <text x="60" y="128" class="tag" fill="#7dd3fc">1 · CALLERS</text>
+    <rect x="60" y="138" width="340" height="66" rx="12" fill="#0f2233" stroke="#7dd3fc" stroke-width="1.5"/>
+    <text x="78" y="164" class="ct">Web console  /ui/</text>
+    <text x="78" y="186" class="cs">Static page, strict CSP, token kept in this tab only</text>
+
+    <rect x="420" y="138" width="340" height="66" rx="12" fill="#0f2233" stroke="#7dd3fc" stroke-width="1.5"/>
+    <text x="438" y="164" class="ct">Any HTTP client</text>
+    <text x="438" y="186" class="cs">curl · scripts/smoke.py · CI container job</text>
+
+    <rect x="780" y="138" width="340" height="66" rx="12" fill="#0f2233" stroke="#7dd3fc" stroke-width="1.5"/>
+    <text x="798" y="164" class="ct">Regression runner</text>
+    <text x="798" y="186" class="cs">regression_cases.json → 6 expected decisions</text>
+  </g>
+
+  <line x1="590" y1="206" x2="590" y2="246" stroke="#cbd5e1" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="604" y="231" class="lbl mono">Authorization: Bearer &lt;JWT&gt;  ·  X-Request-ID</text>
+
+  <!-- ============ B. FASTAPI ============ -->
+  <g>
+    <rect x="60" y="250" width="1060" height="138" rx="16" fill="#151231" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="80" y="278" class="ph">FastAPI service</text>
+    <text x="232" y="278" class="pp">api/app.py · api/routes.py · api/dependencies.py</text>
+    <text x="1100" y="278" class="tag" fill="#a78bfa" text-anchor="end">2 · API &amp; IDENTITY</text>
+
+    <rect x="80" y="296" width="240" height="74" rx="10" fill="#1d1942" stroke="#4c3f8f"/>
+    <text x="94" y="320" class="ct">Request context</text>
+    <text x="94" y="340" class="cs">request id for every log line</text>
+    <text x="94" y="357" class="cs">security headers on responses</text>
+
+    <rect x="335" y="296" width="240" height="74" rx="10" fill="#1d1942" stroke="#4c3f8f"/>
+    <text x="349" y="320" class="ct">get_identity → JwtVerifier</text>
+    <text x="349" y="340" class="cs">signature, issuer, audience, expiry</text>
+    <text x="349" y="357" class="cs">missing / bad token → 401</text>
+
+    <rect x="590" y="296" width="240" height="74" rx="10" fill="#1d1942" stroke="#4c3f8f"/>
+    <text x="604" y="320" class="ct">Scope check per route</text>
+    <text x="604" y="340" class="cs mono">agents:invoke</text>
+    <text x="604" y="357" class="cs mono">conversations:read  → else 403</text>
+
+    <rect x="845" y="296" width="255" height="74" rx="10" fill="#1d1942" stroke="#4c3f8f"/>
+    <text x="859" y="320" class="ct">One error envelope</text>
+    <text x="859" y="340" class="cs">every failure → same JSON shape</text>
+    <text x="859" y="357" class="cs">no stack traces or internals</text>
+  </g>
+
+  <line x1="590" y1="390" x2="590" y2="426" stroke="#cbd5e1" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="604" y="413" class="lbl mono">runner.run(agent_key, message, identity, request_id, conversation_id)</text>
+
+  <!-- ============ C. RUNNER / ORCHESTRATOR ============ -->
+  <g>
+    <rect x="60" y="430" width="1060" height="184" rx="16" fill="#241a0b" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="80" y="458" class="ph">AgentRunner.run()  — the orchestrator</text>
+    <text x="415" y="458" class="pp">services/runner.py · no FastAPI imports · the only path to an agent</text>
+    <text x="1100" y="458" class="tag" fill="#fbbf24" text-anchor="end">3 · ORCHESTRATION</text>
+
+    <!-- row 1 -->
+    <g>
+      <rect x="80" y="474" width="240" height="56" rx="10" fill="#33250f" stroke="#7a5a1a"/>
+      <circle cx="99" cy="492" r="10" fill="#fbbf24"/><text x="99" y="496" class="num" text-anchor="middle">1</text>
+      <text x="116" y="497" class="ct">Check message size</text>
+      <text x="94" y="518" class="cs">over 2,000 chars → 422, no work done</text>
+
+      <rect x="335" y="474" width="240" height="56" rx="10" fill="#33250f" stroke="#7a5a1a"/>
+      <circle cx="354" cy="492" r="10" fill="#fbbf24"/><text x="354" y="496" class="num" text-anchor="middle">2</text>
+      <text x="371" y="497" class="ct">Resolve the agent</text>
+      <text x="349" y="518" class="cs">AgentRegistry → AgentDefinition</text>
+
+      <rect x="590" y="474" width="240" height="56" rx="10" fill="#33250f" stroke="#7a5a1a"/>
+      <circle cx="609" cy="492" r="10" fill="#fbbf24"/><text x="609" y="496" class="num" text-anchor="middle">3</text>
+      <text x="626" y="497" class="ct">Check ownership</text>
+      <text x="604" y="518" class="cs">someone else's conversation → 404</text>
+
+      <rect x="845" y="474" width="255" height="56" rx="10" fill="#33250f" stroke="#7a5a1a"/>
+      <circle cx="864" cy="492" r="10" fill="#fbbf24"/><text x="864" y="496" class="num" text-anchor="middle">4</text>
+      <text x="881" y="497" class="ct">Start the evidence</text>
+      <text x="859" y="518" class="cs">new execution_id + ExecutionRecorder</text>
+    </g>
+    <!-- row 2 -->
+    <g>
+      <rect x="80" y="542" width="240" height="56" rx="10" fill="#33250f" stroke="#7a5a1a"/>
+      <circle cx="99" cy="560" r="10" fill="#fbbf24"/><text x="99" y="564" class="num" text-anchor="middle">5</text>
+      <text x="116" y="565" class="ct">Bind the tool gateway</text>
+      <text x="94" y="586" class="cs mono" font-size="11">tools.bind(agent.key, recorder)</text>
+
+      <rect x="335" y="542" width="240" height="56" rx="10" fill="#33250f" stroke="#fbbf24" stroke-width="1.5"/>
+      <circle cx="354" cy="560" r="10" fill="#fbbf24"/><text x="354" y="564" class="num" text-anchor="middle">6</text>
+      <text x="371" y="565" class="ct">Run the graph</text>
+      <text x="349" y="586" class="cs mono">graph.stream() → step timings</text>
+
+      <rect x="590" y="542" width="240" height="56" rx="10" fill="#33250f" stroke="#7a5a1a"/>
+      <circle cx="609" cy="560" r="10" fill="#fbbf24"/><text x="609" y="564" class="num" text-anchor="middle">7</text>
+      <text x="626" y="565" class="ct">Validate the output</text>
+      <text x="604" y="586" class="cs">against output_model (Pydantic)</text>
+
+      <rect x="845" y="542" width="255" height="56" rx="10" fill="#33250f" stroke="#7a5a1a"/>
+      <circle cx="864" cy="560" r="10" fill="#fbbf24"/><text x="864" y="564" class="num" text-anchor="middle">8</text>
+      <text x="881" y="565" class="ct">Record and reply</text>
+      <text x="859" y="586" class="cs">ExecutionRecord + conversation turns</text>
+    </g>
+  </g>
+
+  <!-- runner → conversations / evidence -->
+  <line x1="1122" y1="520" x2="1156" y2="520" stroke="#cbd5e1" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M 1100 600 C 1135 600, 1135 680, 1156 680" fill="none" stroke="#60a5fa" stroke-width="2" marker-end="url(#ah)"/>
+
+  <line x1="455" y1="600" x2="455" y2="640" stroke="#34d399" stroke-width="2" marker-end="url(#ahg)"/>
+  <text x="470" y="627" class="lbl mono">config.configurable = { tools, execution_id, as_of }</text>
+
+  <!-- ============ D. LANGGRAPH ============ -->
+  <g>
+    <rect x="60" y="644" width="1060" height="392" rx="16" fill="#0b2420" stroke="#34d399" stroke-width="1.5"/>
+    <text x="80" y="672" class="ph">LangGraph StateGraph  — the workflow</text>
+    <text x="410" y="672" class="pp">agents/supplier_readiness/graph.py · compiled once at startup</text>
+    <text x="1100" y="672" class="tag" fill="#34d399" text-anchor="end">4 · AGENT WORKFLOW</text>
+    <text x="80" y="694" class="cs">LangChain appears only as <tspan class="mono" fill="#e2e8f0">langchain_core.RunnableConfig</tspan>, the type of the config passed into each node. No chains, no prompts, no model.</text>
+
+    <!-- START -->
+    <circle cx="96" cy="790" r="14" fill="#34d399"/>
+    <text x="96" y="794" class="num" text-anchor="middle">S</text>
+    <line x1="111" y1="790" x2="123" y2="790" stroke="#34d399" stroke-width="2" marker-end="url(#ahg)"/>
+
+    <!-- identify -->
+    <rect x="125" y="764" width="150" height="52" rx="26" fill="#10392f" stroke="#34d399" stroke-width="2"/>
+    <text x="200" y="796" class="ct" text-anchor="middle">identify</text>
+
+    <!-- route diamond -->
+    <line x1="275" y1="790" x2="303" y2="790" stroke="#34d399" stroke-width="2"/>
+    <path d="M 330 763 L 357 790 L 330 817 L 303 790 Z" fill="#0b2420" stroke="#34d399" stroke-width="2"/>
+    <text x="330" y="794" class="cs" text-anchor="middle" fill="#e2e8f0">route</text>
+    <line x1="357" y1="790" x2="383" y2="790" stroke="#34d399" stroke-width="2" marker-end="url(#ahg)"/>
+
+    <!-- lookup -->
+    <rect x="385" y="764" width="150" height="52" rx="26" fill="#10392f" stroke="#34d399" stroke-width="2"/>
+    <text x="460" y="796" class="ct" text-anchor="middle">lookup</text>
+    <line x1="535" y1="790" x2="643" y2="790" stroke="#34d399" stroke-width="2" marker-end="url(#ahg)"/>
+
+    <!-- assess -->
+    <rect x="645" y="764" width="150" height="52" rx="26" fill="#10392f" stroke="#34d399" stroke-width="2.5"/>
+    <text x="720" y="796" class="ct" text-anchor="middle">assess</text>
+    <line x1="795" y1="790" x2="903" y2="790" stroke="#34d399" stroke-width="2" marker-end="url(#ahg)"/>
+
+    <!-- explain -->
+    <rect x="905" y="764" width="150" height="52" rx="26" fill="#10392f" stroke="#34d399" stroke-width="2"/>
+    <text x="980" y="796" class="ct" text-anchor="middle">explain</text>
+    <line x1="1055" y1="790" x2="1072" y2="790" stroke="#34d399" stroke-width="2" marker-end="url(#ahg)"/>
+
+    <!-- END -->
+    <circle cx="1088" cy="790" r="14" fill="none" stroke="#34d399" stroke-width="2.5"/>
+    <circle cx="1088" cy="790" r="7" fill="#34d399"/>
+
+    <!-- bypass edge -->
+    <path d="M 330 763 C 330 718, 720 718, 720 762" fill="none" stroke="#34d399" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ahg)"/>
+    <rect x="452" y="716" width="186" height="22" rx="11" fill="#0b2420"/>
+    <text x="545" y="731" class="cs" text-anchor="middle" fill="#a7f3d0">no supplier named → skip lookup</text>
+
+    <!-- node detail cards -->
+    <rect x="80" y="836" width="240" height="152" rx="10" fill="#0f2f28" stroke="#1f6b55"/>
+    <text x="94" y="860" class="ct">Find the subject</text>
+    <text x="94" y="882" class="cs mono">extract_supplier_reference()</text>
+    <text x="94" y="902" class="cs">An id like SUP-001, or the</text>
+    <text x="94" y="919" class="cs">capitalised name after "supplier".</text>
+    <text x="94" y="939" class="cs">Plain code, no model. If nothing</text>
+    <text x="94" y="956" class="cs">is found it does not guess.</text>
+
+    <rect x="340" y="836" width="240" height="152" rx="10" fill="#0f2f28" stroke="#1f6b55"/>
+    <text x="354" y="860" class="ct">Fetch the evidence</text>
+    <text x="354" y="882" class="cs mono">tools.invoke(</text>
+    <text x="354" y="899" class="cs mono">  "supplier_evidence_lookup",</text>
+    <text x="354" y="916" class="cs mono">  {supplier_reference})</text>
+    <text x="354" y="939" class="cs">Only through the gateway the</text>
+    <text x="354" y="956" class="cs">runner bound. Never reads data.</text>
+
+    <rect x="600" y="836" width="240" height="152" rx="10" fill="#0f2f28" stroke="#34d399"/>
+    <text x="614" y="860" class="ct">Decide (rules.py)</text>
+    <text x="614" y="880" class="cs">5 required checks: tax registration,</text>
+    <text x="614" y="897" class="cs">sanctions, insurance certificate,</text>
+    <text x="614" y="914" class="cs">bank account, code of conduct</text>
+    <text x="614" y="936" class="cs"><tspan fill="#fca5a5" font-weight="700">failed</tspan> → NOT_READY</text>
+    <text x="614" y="953" class="cs"><tspan fill="#fcd34d" font-weight="700">missing / unknown</tspan> → INSUFFICIENT</text>
+    <text x="614" y="970" class="cs"><tspan fill="#86efac" font-weight="700">all pass</tspan> → READY</text>
+
+    <rect x="860" y="836" width="240" height="152" rx="10" fill="#0f2f28" stroke="#1f6b55"/>
+    <text x="874" y="860" class="ct">Explain (TemplateNarrator)</text>
+    <text x="874" y="882" class="cs">Writes the sentence from the</text>
+    <text x="874" y="899" class="cs">finished decision. Returns text</text>
+    <text x="874" y="916" class="cs">only, so it cannot change it.</text>
+    <text x="874" y="939" class="cs" fill="#a7f3d0">This is where an LLM could go</text>
+    <text x="874" y="956" class="cs" fill="#a7f3d0">later without touching outcomes.</text>
+
+    <text x="80" y="1016" class="cs">State flows through <tspan class="mono" fill="#e2e8f0">SupplierState</tspan>:  message → supplier_reference → lookup → decision, supporting, missing → assessment (SupplierAssessment)</text>
+  </g>
+
+  <!-- lookup → tools -->
+  <line x1="460" y1="1024" x2="460" y2="1066" stroke="#fb923c" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#aho)"/>
+  <rect x="474" y="1040" width="188" height="20" rx="10" fill="#0e1529"/>
+  <text x="482" y="1054" class="lbl mono" fill="#fdba74">gateway.invoke(tool, args)</text>
+
+  <!-- ============ E. TOOLS ============ -->
+  <g>
+    <rect x="60" y="1070" width="1060" height="152" rx="16" fill="#2a1508" stroke="#fb923c" stroke-width="1.5"/>
+    <text x="80" y="1098" class="ph">Governed tool executor</text>
+    <text x="290" y="1098" class="pp">tools/registry.py · ToolExecutor · ToolPolicy · AgentToolGateway</text>
+    <text x="1100" y="1098" class="tag" fill="#fb923c" text-anchor="end">5 · TOOL GOVERNANCE</text>
+
+    <rect x="80" y="1114" width="190" height="88" rx="10" fill="#3a1e0c" stroke="#8a4a1e"/>
+    <text x="94" y="1138" class="ct">Registered?</text>
+    <text x="94" y="1160" class="cs">unknown tool</text>
+    <text x="94" y="1177" class="cs">→ DENIED</text>
+
+    <path d="M 276 1158 l 10 0" stroke="#fb923c" stroke-width="2" marker-end="url(#aho)"/>
+    <rect x="292" y="1114" width="230" height="88" rx="10" fill="#3a1e0c" stroke="#fb923c"/>
+    <text x="306" y="1138" class="ct">Allowed for this agent?</text>
+    <text x="306" y="1160" class="cs">from allowed_tools, frozen at</text>
+    <text x="306" y="1177" class="cs">startup. The agent can't widen it.</text>
+    <text x="306" y="1194" class="cs">not allowed → DENIED</text>
+
+    <path d="M 528 1158 l 10 0" stroke="#fb923c" stroke-width="2" marker-end="url(#aho)"/>
+    <rect x="544" y="1114" width="180" height="88" rx="10" fill="#3a1e0c" stroke="#8a4a1e"/>
+    <text x="558" y="1138" class="ct">Input valid?</text>
+    <text x="558" y="1160" class="cs">Pydantic, extra fields</text>
+    <text x="558" y="1177" class="cs">forbidden → INVALID_INPUT</text>
+
+    <path d="M 730 1158 l 10 0" stroke="#fb923c" stroke-width="2" marker-end="url(#aho)"/>
+    <rect x="746" y="1114" width="170" height="88" rx="10" fill="#3a1e0c" stroke="#8a4a1e"/>
+    <text x="760" y="1138" class="ct">Run + check output</text>
+    <text x="760" y="1160" class="cs">exception contained</text>
+    <text x="760" y="1177" class="cs">→ ERROR</text>
+
+    <path d="M 922 1158 l 10 0" stroke="#fb923c" stroke-width="2" marker-end="url(#aho)"/>
+    <rect x="938" y="1114" width="162" height="88" rx="10" fill="#3a1e0c" stroke="#8a4a1e"/>
+    <text x="952" y="1138" class="ct">Record it</text>
+    <text x="952" y="1160" class="cs">ToolInvocationRecord:</text>
+    <text x="952" y="1177" class="cs">tool, status, ms, error</text>
+  </g>
+
+  <line x1="590" y1="1224" x2="590" y2="1252" stroke="#cbd5e1" stroke-width="2" marker-end="url(#ah)"/>
+
+  <!-- ============ F. DATA ============ -->
+  <g>
+    <rect x="60" y="1256" width="1060" height="66" rx="14" fill="#141b2b" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="80" y="1284" class="ph">Data</text>
+    <text x="80" y="1306" class="cs"><tspan class="mono" fill="#e2e8f0">supplier_evidence_lookup</tspan> (read-only tool)  →  <tspan class="mono" fill="#e2e8f0">SupplierRepository</tspan>  →  <tspan class="mono" fill="#e2e8f0">data/suppliers.json</tspan>  · synthetic data only</text>
+    <text x="1100" y="1284" class="tag" fill="#94a3b8" text-anchor="end">6 · DATA</text>
+  </g>
+
+  <!-- ============ RIGHT COLUMN ============ -->
+  <!-- conversations -->
+  <g>
+    <rect x="1160" y="430" width="380" height="184" rx="16" fill="#151231" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="1180" y="458" class="ph">Conversation memory</text>
+    <text x="1180" y="478" class="pp">services/conversations.py</text>
+    <text x="1180" y="504" class="cs">In memory, owner-scoped. Wrong owner and</text>
+    <text x="1180" y="521" class="cs">no such id both return 404, so ids can't be probed.</text>
+    <text x="1180" y="547" class="cs mono" fill="#ddd6fe">1000 total · 50 per caller</text>
+    <text x="1180" y="566" class="cs mono" fill="#ddd6fe">40 turns · 2000 chars · 1h idle</text>
+    <text x="1180" y="592" class="cs">Oldest evicted at the limit.</text>
+  </g>
+
+  <!-- execution record -->
+  <g>
+    <rect x="1160" y="644" width="380" height="392" rx="16" fill="#0c1a33" stroke="#60a5fa" stroke-width="1.5"/>
+    <text x="1180" y="672" class="ph">Evidence for every run</text>
+    <text x="1180" y="692" class="pp">schemas/execution.py · ExecutionRecord</text>
+    <rect x="1178" y="706" width="344" height="214" rx="8" fill="#08122a" stroke="#1e3a6a"/>
+    <g class="mono" font-size="12.5">
+      <text x="1192" y="728" fill="#93c5fd">{</text>
+      <text x="1204" y="747" fill="#cbd5e1">"request_id": <tspan fill="#fcd34d">"demo-request-0001"</tspan>,</text>
+      <text x="1204" y="766" fill="#cbd5e1">"execution_id": <tspan fill="#fcd34d">"3006…0803"</tspan>,</text>
+      <text x="1204" y="785" fill="#cbd5e1">"agent": <tspan fill="#fcd34d">"supplier-readiness"</tspan>,</text>
+      <text x="1204" y="804" fill="#cbd5e1">"subject_hash": <tspan fill="#fcd34d">HMAC pseudonym</tspan>,</text>
+      <text x="1204" y="823" fill="#cbd5e1">"steps": [identify, lookup,</text>
+      <text x="1204" y="842" fill="#cbd5e1">          assess, explain + ms],</text>
+      <text x="1204" y="861" fill="#cbd5e1">"tools_invoked": [lookup OK ms],</text>
+      <text x="1204" y="880" fill="#cbd5e1">"status": <tspan fill="#86efac">"COMPLETED"</tspan>,</text>
+      <text x="1204" y="899" fill="#cbd5e1">"duration_ms": <tspan fill="#fcd34d">…</tspan></text>
+      <text x="1192" y="915" fill="#93c5fd">}</text>
+    </g>
+    <text x="1180" y="946" class="cs">Returned in the API response, and logged</text>
+    <text x="1180" y="963" class="cs">as one JSON line: <tspan class="mono" fill="#e2e8f0">agent_execution</tspan></text>
+    <text x="1180" y="992" class="cs" fill="#fca5a5" font-weight="700">Never logged:</text>
+    <text x="1180" y="1010" class="cs">message text · tokens · raw identity · secrets</text>
+  </g>
+
+  <!-- fail closed -->
+  <g>
+    <rect x="1160" y="1070" width="380" height="252" rx="16" fill="#2a0f14" stroke="#f87171" stroke-width="1.5"/>
+    <text x="1180" y="1098" class="ph">Fails closed, never approves</text>
+    <text x="1180" y="1128" class="cs">no or bad token  <tspan fill="#fca5a5">→ 401</tspan></text>
+    <text x="1180" y="1150" class="cs">missing scope  <tspan fill="#fca5a5">→ 403</tspan></text>
+    <text x="1180" y="1172" class="cs">someone else's conversation  <tspan fill="#fca5a5">→ 404</tspan></text>
+    <text x="1180" y="1194" class="cs">unregistered or disallowed tool  <tspan fill="#fca5a5">→ DENIED</tspan></text>
+    <text x="1180" y="1216" class="cs">no supplier · not found · ambiguous ·</text>
+    <text x="1180" y="1233" class="cs">tool error  <tspan fill="#fcd34d">→ INSUFFICIENT_EVIDENCE</tspan></text>
+    <text x="1180" y="1255" class="cs">a failed check outranks missing evidence</text>
+    <text x="1180" y="1277" class="cs">invalid agent output  <tspan fill="#fca5a5">→ error with execution_id</tspan></text>
+    <text x="1180" y="1299" class="cs">(still recorded as FAILED evidence)</text>
+  </g>
+
+  <!-- ============ G. TEMPLATE FOR NEXT AGENT ============ -->
+  <g>
+    <rect x="60" y="1356" width="1480" height="186" rx="16" fill="#111827" stroke="#e2e8f0" stroke-width="1.2" stroke-dasharray="8 6"/>
+    <text x="80" y="1386" class="ph">Template for the next agent</text>
+    <text x="320" y="1386" class="cs">e.g. clinical device readiness, or an insurance coverage pre-check. Not built yet. Steps in docs/ADDING_AN_AGENT.md.</text>
+
+    <text x="80" y="1418" class="tag" fill="#34d399">CHANGE PER AGENT</text>
+    <g font-size="12.5">
+      <rect x="80" y="1428" width="132" height="30" rx="15" fill="#10392f" stroke="#34d399"/><text x="146" y="1448" text-anchor="middle" fill="#d1fae5">read-only tool</text>
+      <rect x="220" y="1428" width="132" height="30" rx="15" fill="#10392f" stroke="#34d399"/><text x="286" y="1448" text-anchor="middle" fill="#d1fae5">output schema</text>
+      <rect x="360" y="1428" width="132" height="30" rx="15" fill="#10392f" stroke="#34d399"/><text x="426" y="1448" text-anchor="middle" fill="#d1fae5" class="mono">rules.py</text>
+      <rect x="500" y="1428" width="132" height="30" rx="15" fill="#10392f" stroke="#34d399"/><text x="566" y="1448" text-anchor="middle" fill="#d1fae5" class="mono">graph.py</text>
+      <rect x="80" y="1466" width="200" height="30" rx="15" fill="#10392f" stroke="#34d399"/><text x="180" y="1486" text-anchor="middle" fill="#d1fae5" class="mono">regression_cases.json</text>
+      <rect x="288" y="1466" width="200" height="30" rx="15" fill="#10392f" stroke="#34d399"/><text x="388" y="1486" text-anchor="middle" fill="#d1fae5">AgentDefinition entry</text>
+    </g>
+
+    <text x="700" y="1418" class="tag" fill="#cbd5e1">REUSED AS-IS</text>
+    <g font-size="12.5" fill="#e2e8f0">
+      <rect x="700" y="1428" width="150" height="30" rx="15" fill="#1e293b" stroke="#475569"/><text x="775" y="1448" text-anchor="middle">auth + scopes</text>
+      <rect x="858" y="1428" width="150" height="30" rx="15" fill="#1e293b" stroke="#475569"/><text x="933" y="1448" text-anchor="middle">AgentRunner</text>
+      <rect x="1016" y="1428" width="150" height="30" rx="15" fill="#1e293b" stroke="#475569"/><text x="1091" y="1448" text-anchor="middle">tool governance</text>
+      <rect x="1174" y="1428" width="150" height="30" rx="15" fill="#1e293b" stroke="#475569"/><text x="1249" y="1448" text-anchor="middle">execution evidence</text>
+      <rect x="1332" y="1428" width="190" height="30" rx="15" fill="#1e293b" stroke="#475569"/><text x="1427" y="1448" text-anchor="middle">bounded memory</text>
+      <rect x="700" y="1466" width="150" height="30" rx="15" fill="#1e293b" stroke="#475569"/><text x="775" y="1486" text-anchor="middle">web console</text>
+      <rect x="858" y="1466" width="150" height="30" rx="15" fill="#1e293b" stroke="#475569"/><text x="933" y="1486" text-anchor="middle">smoke + CI</text>
+      <rect x="1016" y="1466" width="150" height="30" rx="15" fill="#1e293b" stroke="#475569"/><text x="1091" y="1486" text-anchor="middle">fail-closed rules</text>
+    </g>
+
+    <text x="80" y="1526" class="cs" fill="#fcd34d">Real patient, device or insurance data needs its own intent first: data classification, retention and access logging. Until then: synthetic data only.</text>
+  </g>
+
+  <text x="1540" y="1566" class="cs" text-anchor="end" fill="#64748b">Drawn from the code at commit 073084e · docs/ARCHITECTURE.md has the full write-up</text>
+</svg>
